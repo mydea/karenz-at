@@ -51,7 +51,7 @@ A German-language React web application providing information and utilities for 
   
   interface ParentData {
     name?: string;
-    monthlySalary: number;              // Gross monthly salary in EUR
+    monthlyNetIncome: number;           // Average monthly net income (3 months before Mutterschutz)
     hasWorked182Days: boolean;          // Required for einkommensabhängig (182 days before birth)
   }
   

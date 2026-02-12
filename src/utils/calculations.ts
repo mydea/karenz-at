@@ -91,18 +91,24 @@ export function calculateFlatRateDailyRate(
 
 /**
  * Calculate income-based daily rate.
- * Based on 80% of the reference income (Wochengeld).
+ * Based on 80% of Wochengeld, which is based on net income.
+ * 
+ * The input is average monthly net income from the 3 months before Mutterschutz.
+ * Wochengeld = average daily net income, KBG = 80% of Wochengeld.
+ * 
+ * Source: https://www.bundeskanzleramt.gv.at/agenda/familie/kinderbetreuungsgeld
  */
-export function calculateIncomeBasedDailyRate(annualGrossIncome: number): number {
-  if (annualGrossIncome <= 0) {
+export function calculateIncomeBasedDailyRate(monthlyNetIncome: number): number {
+  if (monthlyNetIncome <= 0) {
     return INCOME_BASED_CONFIG.dailyRateMin;
   }
 
-  // Simplified formula: (annual income * 0.62 + 4000) / 365 * 0.8
-  // This approximates the Wochengeld-based calculation
-  const estimatedDailyRate = ((annualGrossIncome * 0.62 + 4000) / 365) * 0.8;
+  // Wochengeld is roughly the daily net income (monthly / 30)
+  // Income-based KBG is 80% of Wochengeld
+  const dailyNetIncome = monthlyNetIncome / 30;
+  const estimatedDailyRate = dailyNetIncome * 0.8;
 
-  // Apply min/max bounds
+  // Apply min/max bounds (min €41.14, max €80.12 per day)
   return Math.min(
     Math.max(estimatedDailyRate, INCOME_BASED_CONFIG.dailyRateMin),
     INCOME_BASED_CONFIG.dailyRateMax
@@ -194,11 +200,11 @@ export function compareBothModels(
   const flatRateTotal = flatRateDailyRate * chosenDurationDays;
 
   // Income-based calculations (use higher earning parent's income)
-  const higherIncome = Math.max(
-    parent1.monthlySalary * 12,
-    parent2.monthlySalary * 12
+  const higherMonthlyNet = Math.max(
+    parent1.monthlyNetIncome,
+    parent2.monthlyNetIncome
   );
-  const incomeBasedDailyRate = calculateIncomeBasedDailyRate(higherIncome);
+  const incomeBasedDailyRate = calculateIncomeBasedDailyRate(higherMonthlyNet);
   const incomeBasedMaxDays = isBothParents
     ? INCOME_BASED_CONFIG.maxDaysBothParents
     : INCOME_BASED_CONFIG.maxDaysSingleParent;
@@ -372,8 +378,8 @@ export function calculateFullResults(
     dailyRate = calculateFlatRateDailyRate(durationDays, isBothParents);
   } else {
     // Income-based
-    const higherIncome = Math.max(parent1.monthlySalary * 12, parent2.monthlySalary * 12);
-    dailyRate = calculateIncomeBasedDailyRate(higherIncome);
+    const higherMonthlyNet = Math.max(parent1.monthlyNetIncome, parent2.monthlyNetIncome);
+    dailyRate = calculateIncomeBasedDailyRate(higherMonthlyNet);
     durationDays = isBothParents
       ? INCOME_BASED_CONFIG.maxDaysBothParents
       : INCOME_BASED_CONFIG.maxDaysSingleParent;
@@ -397,8 +403,8 @@ export function calculateFullResults(
   // Monthly breakdown
   const monthlyBreakdown = calculateMonthlyBreakdown(distributionPlan, dailyRate);
 
-  // Income comparison
-  const regularMonthlyIncome = Math.max(parent1.monthlySalary, parent2.monthlySalary);
+  // Income comparison (using net income for comparison)
+  const regularMonthlyIncome = Math.max(parent1.monthlyNetIncome, parent2.monthlyNetIncome);
   const averageKbgMonthly = totalDays > 0 ? totalAmount / (totalDays / 30) : 0;
   const differencePercent =
     regularMonthlyIncome > 0

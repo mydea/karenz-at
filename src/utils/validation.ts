@@ -8,10 +8,10 @@ import { isValidDateString } from './dates';
 export function validateParentData(parent: ParentData, label: string): ValidationError[] {
   const errors: ValidationError[] = [];
 
-  if (parent.monthlySalary < 0) {
+  if (parent.monthlyNetIncome < 0) {
     errors.push({
-      field: `${label}.monthlySalary`,
-      message: `${label}: Gehalt kann nicht negativ sein`,
+      field: `${label}.monthlyNetIncome`,
+      message: `${label}: Einkommen kann nicht negativ sein`,
     });
   }
 

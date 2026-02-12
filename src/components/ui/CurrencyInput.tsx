@@ -16,20 +16,23 @@ interface CurrencyInputProps {
  */
 export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
   ({ value, onChange, id, placeholder = '0', disabled, min = 0, max, className = '' }, ref) => {
+    // Ensure value is a valid number (handle undefined/NaN from old data)
+    const safeValue = typeof value === 'number' && !isNaN(value) ? value : 0;
+
     const formatValue = (num: number): string => {
       if (num === 0) return '';
       return num.toLocaleString('de-AT');
     };
 
-    const [displayValue, setDisplayValue] = useState(() => formatValue(value));
+    const [displayValue, setDisplayValue] = useState(() => formatValue(safeValue));
     const [isFocused, setIsFocused] = useState(false);
 
     // Sync display value when external value changes
     useEffect(() => {
       if (!isFocused) {
-        setDisplayValue(formatValue(value));
+        setDisplayValue(formatValue(safeValue));
       }
-    }, [value, isFocused]);
+    }, [safeValue, isFocused]);
 
     const parseValue = (input: string): number => {
       // Remove all non-numeric characters except comma and dot
@@ -55,14 +58,14 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
 
     const handleBlur = () => {
       setIsFocused(false);
-      setDisplayValue(formatValue(value));
+      setDisplayValue(formatValue(safeValue));
     };
 
     const handleFocus = () => {
       setIsFocused(true);
       // Show raw number on focus for easier editing
-      if (value > 0) {
-        setDisplayValue(value.toString());
+      if (safeValue > 0) {
+        setDisplayValue(safeValue.toString());
       }
     };
 

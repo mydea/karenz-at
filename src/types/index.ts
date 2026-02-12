@@ -36,8 +36,8 @@ export interface ChildcareAllowanceModel {
 
 export interface ParentData {
   name?: string;
-  /** Gross monthly salary in EUR */
-  monthlySalary: number;
+  /** Average monthly net income in EUR (from 3 months before Mutterschutz) */
+  monthlyNetIncome: number;
   /** Required for einkommensabhängig (182 days continuous employment before birth) */
   hasWorked182Days: boolean;
 }

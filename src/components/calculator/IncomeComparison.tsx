@@ -40,7 +40,7 @@ export function IncomeComparison({
         {/* Regular Income */}
         <div>
           <div className="mb-1 flex justify-between text-sm">
-            <span className="text-gray-600">Reguläres Bruttoeinkommen</span>
+            <span className="text-gray-600">Reguläres Nettoeinkommen</span>
             <span className="font-semibold">{formatCurrency(regularMonthlyIncome)}</span>
           </div>
           <div className="h-6 w-full rounded-full bg-gray-200">
@@ -95,9 +95,8 @@ export function IncomeComparison({
 
       {/* Info Note */}
       <p className="text-xs text-gray-500">
-        <span className="font-medium">Hinweis:</span> Das KBG ist steuerfrei, das reguläre 
-        Einkommen wird hier brutto verglichen. Der tatsächliche Netto-Unterschied kann 
-        geringer ausfallen.
+        <span className="font-medium">Hinweis:</span> Das KBG ist steuerfrei und wird hier 
+        mit Ihrem Nettoeinkommen verglichen.
       </p>
     </div>
   );
