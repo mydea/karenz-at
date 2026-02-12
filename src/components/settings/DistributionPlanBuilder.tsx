@@ -279,7 +279,9 @@ export function DistributionPlanBuilder({
     if (!startDate || currentBlocks.length === 0) return;
 
     // Check if first block's start date matches expected start date
-    const firstBlockStart = currentBlocks[0].startDate;
+    const firstBlock = currentBlocks[0];
+    if (!firstBlock) return;
+    const firstBlockStart = firstBlock.startDate;
     if (firstBlockStart === startDate) return;
 
     // Calculate the difference and shift all blocks
@@ -387,9 +389,11 @@ export function DistributionPlanBuilder({
 
   const updateBlock = (index: number, updates: Partial<DistributionBlock>) => {
     const newBlocks = [...blocks];
+    const existingBlock = newBlocks[index];
+    if (!existingBlock) return;
 
     // Update the target block
-    const block = { ...newBlocks[index], ...updates };
+    const block: DistributionBlock = { ...existingBlock, ...updates };
 
     // Recalculate duration if dates changed (and duration wasn't explicitly set)
     if ((updates.startDate || updates.endDate) && !updates.durationDays) {
