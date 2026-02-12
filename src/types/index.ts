@@ -38,9 +38,7 @@ export interface ParentData {
   name?: string;
   /** Gross monthly salary in EUR */
   monthlySalary: number;
-  /** YYYY-MM-DD, only relevant if < 6 months ago */
-  workStartDate?: string;
-  /** Required for einkommensabhängig (182 days continuous employment) */
+  /** Required for einkommensabhängig (182 days continuous employment before birth) */
   hasWorked182Days: boolean;
 }
 

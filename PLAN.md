@@ -52,8 +52,7 @@ A German-language React web application providing information and utilities for 
   interface ParentData {
     name?: string;
     monthlySalary: number;              // Gross monthly salary in EUR
-    workStartDate?: string;             // YYYY-MM-DD, only relevant if < 6 months ago
-    hasWorked182Days: boolean;          // Required for einkommensabhängig
+    hasWorked182Days: boolean;          // Required for einkommensabhängig (182 days before birth)
   }
   
   // === Birth Conditions (affect Mutterschutz duration & benefits) ===
@@ -171,10 +170,9 @@ A German-language React web application providing information and utilities for 
   - Monthly/yearly toggle
   - Separate inputs for both parents
   - Currency formatting (€)
-- [ ] Work start date inputs (optional)
-  - Show explanation: "Nur relevant wenn Arbeitsbeginn < 6 Monate"
 - [ ] Employment eligibility toggle for each parent
   - "182 Tage durchgehend erwerbstätig vor Geburt?"
+  - Show calculated cutoff date when birth date is entered
   - Required to unlock einkommensabhängig model
 - [ ] Childcare allowance model selector
   - Radio buttons: Flat-rate (Pauschales KBG) vs. Income-based (Einkommensabhängiges KBG)

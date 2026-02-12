@@ -1,21 +1,6 @@
 import type { UserData, DistributionBlock, ParentData, ValidationError } from '@/types';
 import { FLAT_RATE_CONFIG, INCOME_BASED_CONFIG } from '@/data/constants';
-
-/**
- * Validate a date string is in YYYY-MM-DD format and is a valid date.
- */
-export function isValidDateString(dateStr: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-    return false;
-  }
-
-  const [year, month, day] = dateStr.split('-').map(Number);
-  const date = new Date(year!, month! - 1, day);
-
-  return (
-    date.getFullYear() === year && date.getMonth() === month! - 1 && date.getDate() === day
-  );
-}
+import { isValidDateString } from './dates';
 
 /**
  * Validate parent data.
@@ -27,13 +12,6 @@ export function validateParentData(parent: ParentData, label: string): Validatio
     errors.push({
       field: `${label}.monthlySalary`,
       message: `${label}: Gehalt kann nicht negativ sein`,
-    });
-  }
-
-  if (parent.workStartDate && !isValidDateString(parent.workStartDate)) {
-    errors.push({
-      field: `${label}.workStartDate`,
-      message: `${label}: Ungültiges Datumsformat (erwartet: JJJJ-MM-TT)`,
     });
   }
 
