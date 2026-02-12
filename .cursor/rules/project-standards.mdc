@@ -1,0 +1,38 @@
+---
+description: Core project standards - follow PLAN.md and RULES.md
+alwaysApply: true
+---
+
+# Project Standards
+
+Always read and follow these project files before making changes:
+
+## Required Reading
+
+1. **RULES.md** - Language and date handling conventions
+2. **PLAN.md** - Implementation plan, data models, and architecture
+
+## Key Rules (from RULES.md)
+
+### Language
+- **User-facing text**: German (UI labels, error messages, help text)
+- **Internal code**: English (variable names, function names, types, comments)
+
+### Date Handling
+- **Storage**: `YYYY-MM-DD` strings (never `Date` objects or timestamps)
+- **Display**: German format `DD.MM.YYYY`
+- **Parsing**: Always explicit, never `new Date(string)` with ambiguous formats
+
+## Data Model Types (from PLAN.md)
+
+Use these type names in code:
+- `ChildcareAllowanceModel` (not Kinderbetreuungsgeld)
+- `AllowanceType`: `'flatRate'` | `'incomeBased'`
+- `DistributionBlock` (not Bezugsblock)
+- `FLAT_RATE_CONFIG` / `INCOME_BASED_CONFIG`
+
+## Before Implementation
+
+1. Check PLAN.md for the relevant phase and tasks
+2. Follow the TypeScript interfaces defined there
+3. Use the constants/config values specified
