@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import type { DistributionBlock, ChildcareAllowanceModel } from '@/types';
+import type { DistributionBlock, ChildcareAllowanceModel, BirthCondition } from '@/types';
 import { FLAT_RATE_CONFIG, INCOME_BASED_CONFIG } from '@/data/constants';
 import { addDays, daysBetween, formatDateGerman, parseDateGerman, isValidDateString } from '@/utils/dates';
+import { calculateMutterschutz } from '@/utils/calculations';
 
 /**
  * Duration input that allows free typing and only validates on blur.
@@ -147,7 +148,8 @@ interface DistributionPlanBuilderProps {
   blocks: DistributionBlock[];
   onChange: (blocks: DistributionBlock[]) => void;
   model: ChildcareAllowanceModel;
-  startDate: string; // Date when KBG can start (after Mutterschutz)
+  dueDate: string; // Expected/actual birth date
+  birthConditions: BirthCondition[];
   isBothParents: boolean;
   parent1Name?: string;
   parent2Name?: string;
@@ -157,11 +159,60 @@ export function DistributionPlanBuilder({
   blocks,
   onChange,
   model,
-  startDate,
+  dueDate,
+  birthConditions,
   isBothParents,
   parent1Name,
   parent2Name,
 }: DistributionPlanBuilderProps) {
+  // Calculate Mutterschutz period
+  const mutterschutz = calculateMutterschutz(dueDate, birthConditions);
+  const mutterschutzDays = mutterschutz.startDate && mutterschutz.endDate
+    ? (daysBetween(mutterschutz.startDate, mutterschutz.endDate) ?? 0) + 1
+    : 0;
+
+  // KBG starts the day after Mutterschutz ends
+  const startDate = mutterschutz.endDate ? addDays(mutterschutz.endDate, 1) : null;
+  
+  // Refs to access current values without triggering effect reruns
+  const blocksRef = useRef(blocks);
+  const onChangeRef = useRef(onChange);
+  blocksRef.current = blocks;
+  onChangeRef.current = onChange;
+  
+  // When the KBG start date changes (e.g., birth conditions modified), shift all blocks
+  useEffect(() => {
+    const currentBlocks = blocksRef.current;
+    
+    // Skip if no blocks or no start date
+    if (!startDate || currentBlocks.length === 0) return;
+    
+    // Check if first block's start date matches expected start date
+    const firstBlockStart = currentBlocks[0].startDate;
+    if (firstBlockStart === startDate) return;
+    
+    // Calculate the difference and shift all blocks
+    const daysDiff = daysBetween(firstBlockStart, startDate);
+    if (daysDiff === null || daysDiff === 0) return;
+    
+    // Shift all blocks by the difference
+    const shiftedBlocks = currentBlocks.map(block => {
+      const newStartDate = addDays(block.startDate, daysDiff);
+      const newEndDate = addDays(block.endDate, daysDiff);
+      
+      if (newStartDate && newEndDate) {
+        return {
+          ...block,
+          startDate: newStartDate,
+          endDate: newEndDate,
+        };
+      }
+      return block;
+    });
+    
+    onChangeRef.current(shiftedBlocks);
+  }, [startDate]);
+  
   // Use names if provided, otherwise fallback to default labels
   const parent1Label = parent1Name || 'Elternteil 1';
   const parent2Label = parent2Name || 'Elternteil 2';
@@ -276,8 +327,11 @@ export function DistributionPlanBuilder({
   const getParentLabel = (parent: 'parent1' | 'parent2') =>
     parent === 'parent1' ? parent1Label : parent2Label;
 
-  // Calculate percentage for visual bar
-  const getBlockWidth = (days: number) => Math.max((days / maxDays) * 100, 5);
+  // Total timeline includes Mutterschutz + KBG
+  const totalTimelineDays = mutterschutzDays + maxDays;
+  
+  // Calculate percentage for visual bar (relative to total timeline)
+  const getBlockWidth = (days: number) => Math.max((days / totalTimelineDays) * 100, 3);
 
   return (
     <div className="card space-y-6">
@@ -288,10 +342,30 @@ export function DistributionPlanBuilder({
         </p>
       </div>
 
+      {/* Mutterschutz info */}
+      {mutterschutz.startDate && mutterschutz.endDate && (
+        <div className="rounded-lg border border-purple-200 bg-purple-50 p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded bg-purple-500" />
+              <span className="text-sm font-medium text-purple-900">
+                Mutterschutz (Wochengeld)
+              </span>
+            </div>
+            <span className="text-sm text-purple-700">
+              {formatDateGerman(mutterschutz.startDate)} – {formatDateGerman(mutterschutz.endDate)}
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-purple-600">
+            {mutterschutzDays} Tage ({mutterschutz.weeksAfterBirth === 12 ? '8 + 12' : '8 + 8'} Wochen) · Danach beginnt das Kinderbetreuungsgeld
+          </p>
+        </div>
+      )}
+
       {/* Visual timeline */}
       <div className="space-y-3">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-600">Gesamtdauer: {maxDays} Tage</span>
+          <span className="text-gray-600">KBG-Dauer: {maxDays} Tage</span>
           <span className={remainingDays < 0 ? 'text-red-600' : 'text-gray-600'}>
             Noch verfügbar: {remainingDays} Tage
           </span>
@@ -299,42 +373,60 @@ export function DistributionPlanBuilder({
 
         {/* Timeline bar */}
         <div className="relative h-12 overflow-hidden rounded-lg bg-gray-100">
-          {blocks.length === 0 ? (
-            <div className="flex h-full items-center justify-center text-sm text-gray-400">
-              Noch keine Blöcke geplant
-            </div>
-          ) : (
-            <div className="flex h-full">
-              {blocks.map((block, index) => (
-                <div
-                  key={index}
-                  className={`relative flex items-center justify-center text-xs font-medium text-white transition-all ${getParentColor(block.parent)} ${
-                    editingBlock === index ? 'ring-2 ring-offset-1 ring-primary-400' : ''
-                  }`}
-                  style={{ width: `${getBlockWidth(block.durationDays)}%` }}
-                  onClick={() => setEditingBlock(editingBlock === index ? null : index)}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <span className="truncate px-1">
-                    {block.durationDays}d
-                  </span>
-                </div>
-              ))}
-              {remainingDays > 0 && (
-                <div
-                  className="flex flex-1 items-center justify-center text-xs text-gray-400"
-                  style={{ minWidth: `${getBlockWidth(remainingDays)}%` }}
-                >
-                  +{remainingDays}d
-                </div>
-              )}
-            </div>
-          )}
+          <div className="flex h-full">
+            {/* Mutterschutz block */}
+            {mutterschutzDays > 0 && (
+              <div
+                className="flex items-center justify-center bg-purple-500 text-xs font-medium text-white"
+                style={{ width: `${getBlockWidth(mutterschutzDays)}%` }}
+                title={`Mutterschutz: ${mutterschutzDays} Tage`}
+              >
+                <span className="truncate px-1">MS</span>
+              </div>
+            )}
+            
+            {/* KBG blocks */}
+            {blocks.length === 0 && startDate ? (
+              <div className="flex flex-1 items-center justify-center text-sm text-gray-400">
+                Noch keine KBG-Blöcke geplant
+              </div>
+            ) : (
+              <>
+                {blocks.map((block, index) => (
+                  <div
+                    key={index}
+                    className={`relative flex items-center justify-center text-xs font-medium text-white transition-all ${getParentColor(block.parent)} ${
+                      editingBlock === index ? 'ring-2 ring-offset-1 ring-primary-400' : ''
+                    }`}
+                    style={{ width: `${getBlockWidth(block.durationDays)}%` }}
+                    onClick={() => setEditingBlock(editingBlock === index ? null : index)}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    <span className="truncate px-1">
+                      {block.durationDays}d
+                    </span>
+                  </div>
+                ))}
+                {remainingDays > 0 && (
+                  <div
+                    className="flex flex-1 items-center justify-center text-xs text-gray-400"
+                    style={{ minWidth: `${getBlockWidth(remainingDays)}%` }}
+                  >
+                    +{remainingDays}d
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
         {/* Legend */}
-        <div className="flex gap-4 text-sm">
+        <div className="flex flex-wrap gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="h-3 w-3 rounded bg-purple-500" />
+            <span>Mutterschutz: {mutterschutzDays} Tage</span>
+          </div>
           <div className="flex items-center gap-2">
             <div className="h-3 w-3 rounded bg-primary-500" />
             <span>{parent1Label}: {parent1Days} Tage</span>

@@ -9,7 +9,6 @@ import {
 } from '@/components/settings';
 import { validateUserData } from '@/utils/validation';
 import { formatDateGerman } from '@/utils/dates';
-import { calculateKbgStartDate } from '@/utils/calculations';
 
 export default function SettingsPage() {
   const {
@@ -25,11 +24,6 @@ export default function SettingsPage() {
   } = useUserData();
 
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-
-  // Calculate KBG start date (day after Mutterschutz ends)
-  const kbgStartDate = userData.dueDate
-    ? calculateKbgStartDate(userData.dueDate, userData.birthConditions)
-    : null;
 
   // Validate on render for real-time feedback
   const errors = validateUserData(userData);
@@ -156,12 +150,13 @@ export default function SettingsPage() {
       />
 
       {/* Distribution plan builder */}
-      {kbgStartDate && (
+      {userData.dueDate && (
         <DistributionPlanBuilder
           blocks={userData.distributionPlan}
           onChange={updateDistributionPlan}
           model={userData.selectedModel}
-          startDate={kbgStartDate}
+          dueDate={userData.dueDate}
+          birthConditions={userData.birthConditions}
           isBothParents={isBothParents}
           parent1Name={userData.parent1.name}
           parent2Name={userData.parent2.name}
