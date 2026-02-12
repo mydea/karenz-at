@@ -1,7 +1,62 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { DistributionBlock, ChildcareAllowanceModel } from '@/types';
 import { FLAT_RATE_CONFIG, INCOME_BASED_CONFIG } from '@/data/constants';
 import { addDays, daysBetween, formatDateGerman } from '@/utils/dates';
+
+/**
+ * Duration input that allows free typing and only validates on blur.
+ */
+function DurationInput({
+  value,
+  onChange,
+  min,
+  max,
+}: {
+  value: number;
+  onChange: (value: number) => void;
+  min: number;
+  max: number;
+}) {
+  const [localValue, setLocalValue] = useState(value.toString());
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync local value when external value changes (but not while focused)
+  const handleFocus = () => {
+    setLocalValue(value.toString());
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalValue(e.target.value);
+  };
+
+  const handleBlur = () => {
+    const parsed = parseInt(localValue) || 0;
+    const clamped = Math.min(Math.max(parsed, min), max);
+    setLocalValue(clamped.toString());
+    onChange(clamped);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      inputRef.current?.blur();
+    }
+  };
+
+  return (
+    <input
+      ref={inputRef}
+      type="number"
+      value={localValue}
+      onChange={handleChange}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+      min={min}
+      max={max}
+      className="w-20 rounded border border-gray-300 px-2 py-1 text-sm"
+    />
+  );
+}
 
 interface DistributionPlanBuilderProps {
   blocks: DistributionBlock[];
@@ -231,15 +286,11 @@ export function DistributionPlanBuilder({
               <div>
                 <label className="text-xs text-gray-500">Dauer</label>
                 <div className="flex items-center gap-2">
-                  <input
-                    type="number"
+                  <DurationInput
                     value={block.durationDays}
-                    onChange={(e) =>
-                      updateBlock(index, { durationDays: Math.max(FLAT_RATE_CONFIG.minBlockDays, parseInt(e.target.value) || 0) })
-                    }
+                    onChange={(days) => updateBlock(index, { durationDays: days })}
                     min={FLAT_RATE_CONFIG.minBlockDays}
                     max={remainingDays + block.durationDays}
-                    className="w-20 rounded border border-gray-300 px-2 py-1 text-sm"
                   />
                   <span className="text-sm text-gray-500">Tage</span>
                 </div>
