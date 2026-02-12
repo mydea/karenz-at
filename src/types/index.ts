@@ -79,15 +79,71 @@ export interface ModelComparison {
     dailyRate: number;
     totalAmount: number;
     durationDays: number;
+    monthlyRate: number;
   };
   incomeBased: {
     dailyRate: number;
     totalAmount: number;
     durationDays: number;
+    monthlyRate: number;
     eligible: boolean;
   };
   recommendation: AllowanceType | 'either';
   reasonKey: string;
+}
+
+// === Calculator Types ===
+
+export interface MonthlyBreakdownItem {
+  /** Month in YYYY-MM format */
+  month: string;
+  /** Display label (e.g., "Januar 2026") */
+  monthLabel: string;
+  /** Which parent receives benefits this month */
+  parent: 'parent1' | 'parent2' | 'both' | 'none';
+  /** KBG amount for this month */
+  kbgAmount: number;
+  /** Regular income for comparison (optional) */
+  regularIncome?: number;
+  /** Days in this month with KBG */
+  daysWithKbg: number;
+}
+
+export interface CalculatorResults {
+  /** Results for the selected model */
+  selectedModelResults: {
+    dailyRate: number;
+    monthlyRate: number;
+    totalAmount: number;
+    durationDays: number;
+  };
+  /** Partnership bonus amount (€500 each if both take ≥124 days) */
+  partnershipBonus: number;
+  /** Additional amount for twins/triplets */
+  multipleBirthSupplement: number;
+  /** Familienbonus Plus yearly amount */
+  familienbonusYearly: number;
+  /** Grand total of all benefits */
+  grandTotal: number;
+  /** Monthly breakdown for chart */
+  monthlyBreakdown: MonthlyBreakdownItem[];
+  /** Income comparison */
+  incomeComparison: {
+    regularMonthlyIncome: number;
+    averageKbgMonthly: number;
+    differencePercent: number;
+  };
+  /** Per-parent breakdown */
+  parentBreakdown: {
+    parent1: {
+      days: number;
+      amount: number;
+    };
+    parent2: {
+      days: number;
+      amount: number;
+    };
+  };
 }
 
 // === Timeline Events ===
