@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import type { DistributionBlock, ChildcareAllowanceModel, BirthCondition } from '@/types';
-import { FLAT_RATE_CONFIG, INCOME_BASED_CONFIG } from '@/data/constants';
+import { FLAT_RATE_CONFIG, INCOME_BASED_CONFIG, MUTTERSCHUTZ_CONFIG } from '@/data/constants';
 import { addDays, daysBetween, formatDateGerman, parseDateGerman, isValidDateString } from '@/utils/dates';
 import { calculateMutterschutz } from '@/utils/calculations';
 
@@ -167,9 +167,9 @@ export function DistributionPlanBuilder({
 }: DistributionPlanBuilderProps) {
   // Calculate Mutterschutz period
   const mutterschutz = calculateMutterschutz(dueDate, birthConditions);
-  const mutterschutzDays = mutterschutz.startDate && mutterschutz.endDate
-    ? (daysBetween(mutterschutz.startDate, mutterschutz.endDate) ?? 0) + 1
-    : 0;
+  const preBirthMutterschutzDays = MUTTERSCHUTZ_CONFIG.weeksBeforeBirth * 7;
+  const postBirthMutterschutzDays = mutterschutz.weeksAfterBirth * 7;
+  const mutterschutzDays = preBirthMutterschutzDays + postBirthMutterschutzDays;
 
   // KBG starts the day after Mutterschutz ends
   const startDate = mutterschutz.endDate ? addDays(mutterschutz.endDate, 1) : null;
@@ -220,12 +220,18 @@ export function DistributionPlanBuilder({
 
   // Get max duration based on model and whether both parents take leave
   const config = model.type === 'flatRate' ? FLAT_RATE_CONFIG : INCOME_BASED_CONFIG;
-  const maxDays =
+  
+  // The total allowance duration includes Mutterschutz after birth
+  // So actual KBG days = total days - post-birth Mutterschutz days
+  const totalAllowanceDays =
     model.type === 'flatRate'
       ? model.chosenDurationDays ?? (isBothParents ? config.maxDaysBothParents : config.maxDaysSingleParent)
       : isBothParents
         ? INCOME_BASED_CONFIG.maxDaysBothParents
         : INCOME_BASED_CONFIG.maxDaysSingleParent;
+  
+  // Subtract post-birth Mutterschutz to get actual KBG days available
+  const maxDays = totalAllowanceDays - postBirthMutterschutzDays;
 
   // Calculate total days used
   const totalDaysUsed = blocks.reduce((sum, b) => sum + b.durationDays, 0);
@@ -356,16 +362,23 @@ export function DistributionPlanBuilder({
               {formatDateGerman(mutterschutz.startDate)} – {formatDateGerman(mutterschutz.endDate)}
             </span>
           </div>
-          <p className="mt-1 text-xs text-purple-600">
-            {mutterschutzDays} Tage ({mutterschutz.weeksAfterBirth === 12 ? '8 + 12' : '8 + 8'} Wochen) · Danach beginnt das Kinderbetreuungsgeld
-          </p>
+          <div className="mt-1 flex flex-wrap gap-x-4 text-xs text-purple-600">
+            <span>{preBirthMutterschutzDays} Tage vor Geburt ({MUTTERSCHUTZ_CONFIG.weeksBeforeBirth} Wo.)</span>
+            <span>{postBirthMutterschutzDays} Tage nach Geburt ({mutterschutz.weeksAfterBirth} Wo.)</span>
+            <span>→ KBG beginnt am {startDate ? formatDateGerman(startDate) : '–'}</span>
+          </div>
         </div>
       )}
 
       {/* Visual timeline */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-600">KBG-Dauer: {maxDays} Tage</span>
+        <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+          <span className="text-gray-600">
+            Gesamtanspruch: {totalAllowanceDays} Tage (davon {postBirthMutterschutzDays} Tage Mutterschutz)
+          </span>
+          <span className="text-gray-600">
+            KBG: {maxDays} Tage
+          </span>
           <span className={remainingDays < 0 ? 'text-red-600' : 'text-gray-600'}>
             Noch verfügbar: {remainingDays} Tage
           </span>
@@ -374,14 +387,25 @@ export function DistributionPlanBuilder({
         {/* Timeline bar */}
         <div className="relative h-12 overflow-hidden rounded-lg bg-gray-100">
           <div className="flex h-full">
-            {/* Mutterschutz block */}
-            {mutterschutzDays > 0 && (
+            {/* Pre-birth Mutterschutz block */}
+            {preBirthMutterschutzDays > 0 && (
               <div
-                className="flex items-center justify-center bg-purple-500 text-xs font-medium text-white"
-                style={{ width: `${getBlockWidth(mutterschutzDays)}%` }}
-                title={`Mutterschutz: ${mutterschutzDays} Tage`}
+                className="flex items-center justify-center bg-purple-400 text-xs font-medium text-white"
+                style={{ width: `${getBlockWidth(preBirthMutterschutzDays)}%` }}
+                title={`Mutterschutz vor Geburt: ${preBirthMutterschutzDays} Tage`}
               >
-                <span className="truncate px-1">MS</span>
+                <span className="truncate px-1">MS↓</span>
+              </div>
+            )}
+            
+            {/* Post-birth Mutterschutz block */}
+            {postBirthMutterschutzDays > 0 && (
+              <div
+                className="flex items-center justify-center bg-purple-600 text-xs font-medium text-white"
+                style={{ width: `${getBlockWidth(postBirthMutterschutzDays)}%` }}
+                title={`Mutterschutz nach Geburt: ${postBirthMutterschutzDays} Tage`}
+              >
+                <span className="truncate px-1">MS↑</span>
               </div>
             )}
             
@@ -422,18 +446,22 @@ export function DistributionPlanBuilder({
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap gap-4 text-sm">
+        <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
           <div className="flex items-center gap-2">
-            <div className="h-3 w-3 rounded bg-purple-500" />
-            <span>Mutterschutz: {mutterschutzDays} Tage</span>
+            <div className="h-3 w-3 rounded bg-purple-400" />
+            <span>MS vor Geburt: {preBirthMutterschutzDays}d</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-3 w-3 rounded bg-purple-600" />
+            <span>MS nach Geburt: {postBirthMutterschutzDays}d</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="h-3 w-3 rounded bg-primary-500" />
-            <span>{parent1Label}: {parent1Days} Tage</span>
+            <span>{parent1Label}: {parent1Days}d</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="h-3 w-3 rounded bg-blue-500" />
-            <span>{parent2Label}: {parent2Days} Tage</span>
+            <span>{parent2Label}: {parent2Days}d</span>
           </div>
         </div>
       </div>
