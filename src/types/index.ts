@@ -89,3 +89,35 @@ export interface ModelComparison {
   recommendation: AllowanceType | 'either';
   reasonKey: string;
 }
+
+// === Timeline Events ===
+
+export type TimelineEventCategory =
+  | 'mutterschutz'
+  | 'karenz'
+  | 'kbg'
+  | 'employer'
+  | 'deadline'
+  | 'benefit';
+
+export interface TimelineEvent {
+  id: string;
+  /** Display title in German */
+  title: string;
+  /** Detailed description */
+  description: string;
+  /** YYYY-MM-DD */
+  date: string;
+  /** Optional end date for periods */
+  endDate?: string;
+  /** Event category for filtering and styling */
+  category: TimelineEventCategory;
+  /** Which parent this applies to, if any */
+  parent?: 'parent1' | 'parent2' | 'both';
+  /** Whether this is a period (range) or single date */
+  isPeriod: boolean;
+  /** Optional link to FAQ section */
+  faqLink?: string;
+  /** Priority for sorting (lower = more important) */
+  priority: number;
+}
