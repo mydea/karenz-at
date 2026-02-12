@@ -304,6 +304,17 @@ export function DistributionPlanBuilder({
     onChangeRef.current(shiftedBlocks);
   }, [startDate]);
 
+  // Track previous model type to detect changes
+  const prevModelTypeRef = useRef(model.type);
+
+  // Reset blocks when model type changes
+  useEffect(() => {
+    if (prevModelTypeRef.current !== model.type) {
+      prevModelTypeRef.current = model.type;
+      onChangeRef.current([]);
+    }
+  }, [model.type]);
+
   // Use names if provided, otherwise fallback to default labels
   const parent1Label = parent1Name || 'Elternteil 1';
   const parent2Label = parent2Name || 'Elternteil 2';
