@@ -453,6 +453,15 @@ export function DistributionPlanBuilder({
   // Calculate percentage for visual bar (relative to total timeline)
   const getBlockWidth = (days: number) => Math.max((days / totalTimelineDays) * 100, 3);
 
+  // Calculate total overlap days across all blocks
+  const totalOverlapDays = blocks.reduce((sum, block, index) => {
+    if (index === 0) return sum;
+    const prevBlock = blocks[index - 1];
+    if (!prevBlock) return sum;
+    const overlapOrGap = calculateOverlapOrGap(prevBlock, block);
+    return sum + (overlapOrGap > 0 ? overlapOrGap : 0);
+  }, 0);
+
   return (
     <div className="card space-y-6">
       <div>
@@ -532,20 +541,57 @@ export function DistributionPlanBuilder({
               </div>
             ) : (
               <>
-                {blocks.map((block, index) => (
-                  <div
-                    key={index}
-                    className={`relative flex items-center justify-center text-xs font-medium text-white transition-all ${getParentColor(block.parent)} ${
-                      editingBlock === index ? 'ring-2 ring-primary-400 ring-offset-1' : ''
-                    }`}
-                    style={{ width: `${getBlockWidth(block.durationDays)}%` }}
-                    onClick={() => setEditingBlock(editingBlock === index ? null : index)}
-                    role="button"
-                    tabIndex={0}
-                  >
-                    <span className="truncate px-1">{block.durationDays}d</span>
-                  </div>
-                ))}
+                {blocks.map((block, index) => {
+                  const prevBlock = index > 0 ? blocks[index - 1] : null;
+                  const overlapOrGap = prevBlock ? calculateOverlapOrGap(prevBlock, block) : 0;
+                  const overlapDays = overlapOrGap > 0 ? overlapOrGap : 0;
+                  const nonOverlapDays = block.durationDays - overlapDays;
+                  
+                  // Colors for stripes
+                  const prevColor = prevBlock?.parent === 'parent1' ? 'rgb(99 102 241)' : 'rgb(59 130 246)'; // primary-500 / blue-500
+                  const currentColor = block.parent === 'parent1' ? 'rgb(99 102 241)' : 'rgb(59 130 246)';
+                  
+                  return (
+                    <div
+                      key={index}
+                      className={`relative flex items-center justify-center text-xs font-medium text-white transition-all ${
+                        editingBlock === index ? 'ring-2 ring-primary-400 ring-offset-1' : ''
+                      }`}
+                      style={{ width: `${getBlockWidth(block.durationDays)}%` }}
+                      onClick={() => setEditingBlock(editingBlock === index ? null : index)}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      {/* Overlap portion with stripes */}
+                      {overlapDays > 0 && (
+                        <div
+                          className="absolute left-0 top-0 h-full"
+                          style={{
+                            width: `${(overlapDays / block.durationDays) * 100}%`,
+                            background: `repeating-linear-gradient(
+                              -45deg,
+                              ${prevColor},
+                              ${prevColor} 4px,
+                              ${currentColor} 4px,
+                              ${currentColor} 8px
+                            )`,
+                          }}
+                          title={`Überlappung: ${overlapDays} Tage`}
+                        />
+                      )}
+                      {/* Non-overlap portion with solid color */}
+                      <div
+                        className={`absolute top-0 h-full ${getParentColor(block.parent)}`}
+                        style={{
+                          left: overlapDays > 0 ? `${(overlapDays / block.durationDays) * 100}%` : '0',
+                          width: overlapDays > 0 ? `${(nonOverlapDays / block.durationDays) * 100}%` : '100%',
+                        }}
+                      />
+                      {/* Label */}
+                      <span className="relative z-10 truncate px-1">{block.durationDays}d</span>
+                    </div>
+                  );
+                })}
                 {remainingDays > 0 && (
                   <div
                     className="flex flex-1 items-center justify-center text-xs text-gray-400"
@@ -584,6 +630,23 @@ export function DistributionPlanBuilder({
               {parent2Label}: {parent2Days}d
             </span>
           </div>
+          {totalOverlapDays > 0 && (
+            <div className="flex items-center gap-2">
+              <div
+                className="h-3 w-3 rounded"
+                style={{
+                  background: `repeating-linear-gradient(
+                    -45deg,
+                    rgb(99 102 241),
+                    rgb(99 102 241) 2px,
+                    rgb(59 130 246) 2px,
+                    rgb(59 130 246) 4px
+                  )`,
+                }}
+              />
+              <span>Überlappung: {totalOverlapDays}d</span>
+            </div>
+          )}
         </div>
       </div>
 
