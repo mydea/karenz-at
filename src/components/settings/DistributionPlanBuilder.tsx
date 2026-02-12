@@ -337,6 +337,10 @@ export function DistributionPlanBuilder({
     .filter((b) => b.parent === 'parent2')
     .reduce((sum, b) => sum + b.durationDays, 0);
 
+  // Parent 1 (mother) totals including Mutterschutz
+  const parent1DaysAfterBirth = parent1Days + postBirthMutterschutzDays;
+  const parent1TotalDays = parent1Days + postBirthMutterschutzDays + preBirthMutterschutzDays;
+
   // Minimum days for second parent (flat-rate only)
   const minParent2Days =
     model.type === 'flatRate'
@@ -569,6 +573,9 @@ export function DistributionPlanBuilder({
             <div className="h-3 w-3 rounded bg-primary-500" />
             <span>
               {parent1Label}: {parent1Days}d
+              <span className="text-gray-500">
+                {' '}({parent1DaysAfterBirth}d nach Geburt, {parent1TotalDays}d gesamt)
+              </span>
             </span>
           </div>
           <div className="flex items-center gap-2">
