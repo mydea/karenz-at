@@ -1,7 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { DistributionBlock, ChildcareAllowanceModel } from '@/types';
 import { FLAT_RATE_CONFIG, INCOME_BASED_CONFIG } from '@/data/constants';
-import { addDays, daysBetween, formatDateGerman } from '@/utils/dates';
+import { addDays, daysBetween, formatDateGerman, parseDateGerman, isValidDateString } from '@/utils/dates';
 
 /**
  * Duration input that allows free typing and only validates on blur.
@@ -20,7 +20,13 @@ function DurationInput({
   const [localValue, setLocalValue] = useState(value.toString());
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Sync local value when external value changes (but not while focused)
+  // Sync local value when external value changes and not focused
+  useEffect(() => {
+    if (document.activeElement !== inputRef.current) {
+      setLocalValue(value.toString());
+    }
+  }, [value]);
+
   const handleFocus = () => {
     setLocalValue(value.toString());
   };
@@ -54,6 +60,85 @@ function DurationInput({
       min={min}
       max={max}
       className="w-20 rounded border border-gray-300 px-2 py-1 text-sm"
+    />
+  );
+}
+
+/**
+ * End date input that allows editing in German format and validates on blur.
+ */
+function EndDateInput({
+  value,
+  onChange,
+  minDate,
+}: {
+  value: string; // YYYY-MM-DD
+  onChange: (value: string) => void;
+  minDate: string; // YYYY-MM-DD - minimum valid end date
+}) {
+  const [localValue, setLocalValue] = useState(formatDateGerman(value));
+  const [hasError, setHasError] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync local value when external value changes and not focused
+  useEffect(() => {
+    if (document.activeElement !== inputRef.current) {
+      setLocalValue(formatDateGerman(value));
+      setHasError(false);
+    }
+  }, [value]);
+
+  const handleFocus = () => {
+    setLocalValue(formatDateGerman(value));
+    setHasError(false);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalValue(e.target.value);
+    setHasError(false);
+  };
+
+  const handleBlur = () => {
+    const parsed = parseDateGerman(localValue);
+    
+    if (parsed && isValidDateString(parsed)) {
+      // Check if date is at least minDate
+      if (parsed >= minDate) {
+        setLocalValue(formatDateGerman(parsed));
+        setHasError(false);
+        onChange(parsed);
+      } else {
+        // Date is before minimum, use minimum
+        setLocalValue(formatDateGerman(minDate));
+        setHasError(false);
+        onChange(minDate);
+      }
+    } else {
+      // Invalid date, revert to original
+      setLocalValue(formatDateGerman(value));
+      setHasError(true);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      inputRef.current?.blur();
+    }
+  };
+
+  return (
+    <input
+      ref={inputRef}
+      type="text"
+      value={localValue}
+      onChange={handleChange}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+      placeholder="TT.MM.JJJJ"
+      className={`w-28 rounded border px-2 py-1 text-sm ${
+        hasError ? 'border-red-300 bg-red-50' : 'border-gray-300'
+      }`}
     />
   );
 }
@@ -139,29 +224,44 @@ export function DistributionPlanBuilder({
   };
 
   const updateBlock = (index: number, updates: Partial<DistributionBlock>) => {
-    const newBlocks = blocks.map((block, i) => {
-      if (i !== index) return block;
+    const newBlocks = [...blocks];
 
-      const updated = { ...block, ...updates };
+    // Update the target block
+    const block = { ...newBlocks[index], ...updates };
 
-      // Recalculate duration if dates changed
-      if (updates.startDate || updates.endDate) {
-        const days = daysBetween(updated.startDate, updated.endDate);
-        if (days !== null) {
-          updated.durationDays = days + 1; // Include both start and end day
-        }
+    // Recalculate duration if dates changed
+    if (updates.startDate || updates.endDate) {
+      const days = daysBetween(block.startDate, block.endDate);
+      if (days !== null) {
+        block.durationDays = days + 1; // Include both start and end day
       }
+    }
 
-      // Recalculate end date if duration changed
-      if (updates.durationDays && !updates.endDate) {
-        const newEnd = addDays(updated.startDate, updates.durationDays - 1);
-        if (newEnd) {
-          updated.endDate = newEnd;
-        }
+    // Recalculate end date if duration changed
+    if (updates.durationDays && !updates.endDate) {
+      const newEnd = addDays(block.startDate, updates.durationDays - 1);
+      if (newEnd) {
+        block.endDate = newEnd;
       }
+    }
 
-      return updated;
-    });
+    newBlocks[index] = block;
+
+    // Cascade changes to following blocks - adjust their start dates
+    for (let i = index + 1; i < newBlocks.length; i++) {
+      const prevBlock = newBlocks[i - 1];
+      const currentBlock = newBlocks[i];
+      const newStartDate = addDays(prevBlock.endDate, 1);
+
+      if (newStartDate && newStartDate !== currentBlock.startDate) {
+        const newEndDate = addDays(newStartDate, currentBlock.durationDays - 1);
+        newBlocks[i] = {
+          ...currentBlock,
+          startDate: newStartDate,
+          endDate: newEndDate ?? currentBlock.endDate,
+        };
+      }
+    }
 
     onChange(newBlocks);
   };
@@ -276,15 +376,19 @@ export function DistributionPlanBuilder({
 
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               <div>
-                <label className="text-xs text-gray-500">Von</label>
+                <label className="mb-1 block text-xs text-gray-500">Von</label>
                 <p className="font-medium">{formatDateGerman(block.startDate)}</p>
               </div>
               <div>
-                <label className="text-xs text-gray-500">Bis</label>
-                <p className="font-medium">{formatDateGerman(block.endDate)}</p>
+                <label className="mb-1 block text-xs text-gray-500">Bis</label>
+                <EndDateInput
+                  value={block.endDate}
+                  onChange={(endDate) => updateBlock(index, { endDate })}
+                  minDate={addDays(block.startDate, FLAT_RATE_CONFIG.minBlockDays - 1) ?? block.startDate}
+                />
               </div>
               <div>
-                <label className="text-xs text-gray-500">Dauer</label>
+                <label className="mb-1 block text-xs text-gray-500">Dauer</label>
                 <div className="flex items-center gap-2">
                   <DurationInput
                     value={block.durationDays}
