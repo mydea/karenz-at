@@ -18,16 +18,44 @@ export function generateTimelineEvents(userData: UserData): TimelineEvent[] {
   // Calculate Mutterschutz period
   const mutterschutz = calculateMutterschutz(dueDate, birthConditions);
 
+  // Check if birth date is today or in the past
+  const today = new Date().toISOString().split('T')[0];
+  const isBirthPastOrToday = dueDate <= today;
+
   // === Birth Date ===
   events.push({
     id: 'birth',
-    title: 'Errechneter Geburtstermin',
-    description: 'Der voraussichtliche Geburtstermin Ihres Kindes.',
+    title: isBirthPastOrToday ? 'Geburtstermin' : 'Errechneter Geburtstermin',
+    description: isBirthPastOrToday
+      ? 'Der Geburtstag Ihres Kindes.'
+      : 'Der voraussichtliche Geburtstermin Ihres Kindes.',
     date: dueDate,
     category: 'mutterschutz',
     isPeriod: false,
     priority: 0,
   });
+
+  // === Papamonat / Familienzeitbonus Period ===
+  const papamonatEnd = addDays(dueDate, 90); // 91 days total (day 0-90)
+  if (papamonatEnd) {
+    events.push({
+      id: 'papamonat-period',
+      title: 'Papamonat (Familienzeit)',
+      description:
+        'Zeitraum für den Papamonat/Familienzeitbonus. Der Vater kann innerhalb dieser 91 Tage ' +
+        '28–31 zusammenhängende Tage Familienzeit nehmen. Wichtig: Die Familienzeit kann erst ' +
+        'beginnen, wenn die Mutter aus dem Krankenhaus entlassen wurde. Der Familienzeitbonus ' +
+        'beträgt €22,60 pro Tag. Die Meldung beim Arbeitgeber muss spätestens 3 Monate vor dem ' +
+        'errechneten Geburtstermin erfolgen (bei Frühgeburt: am Tag der Geburt).',
+      date: dueDate,
+      endDate: papamonatEnd,
+      category: 'karenz',
+      parent: 'parent2',
+      isPeriod: true,
+      faqLink: 'papamonat',
+      priority: 3,
+    });
+  }
 
   // === Mutterschutz Period ===
   if (mutterschutz.startDate && mutterschutz.endDate) {
@@ -112,17 +140,17 @@ export function generateTimelineEvents(userData: UserData): TimelineEvent[] {
     });
   }
 
-  // Father notification: within 8 weeks after birth for "Babymonat" or
-  // 3 months before Karenz start
-  const fatherBabymonatDeadline = addDays(dueDate, 56); // 8 weeks after birth
-  if (fatherBabymonatDeadline) {
+  // Father notification for Papamonat: 3 months before due date
+  const fatherPapamonatNotification = subtractDays(dueDate, 91); // 3 months before
+  if (fatherPapamonatNotification) {
     events.push({
-      id: 'father-babymonat-deadline',
-      title: 'Frist Papamonat/Familienzeitbonus',
+      id: 'father-papamonat-notification',
+      title: 'Papamonat-Meldung Arbeitgeber',
       description:
-        'Frist für die Meldung des Papamonats beim Arbeitgeber. ' +
-        'Der Familienzeitbonus (€22,60/Tag) kann in den ersten 91 Tagen nach Geburt bezogen werden.',
-      date: fatherBabymonatDeadline,
+        'Spätester Termin für den Vater, den Papamonat (Familienzeit) beim Arbeitgeber zu melden. ' +
+        'Die Meldung muss Beginn und voraussichtliche Dauer (28–31 Tage) enthalten. ' +
+        'Bei Frühgeburt kann die Meldung auch am Tag der Geburt erfolgen.',
+      date: fatherPapamonatNotification,
       category: 'employer',
       parent: 'parent2',
       isPeriod: false,
