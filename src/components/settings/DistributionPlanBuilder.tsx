@@ -144,6 +144,91 @@ function EndDateInput({
   );
 }
 
+/**
+ * Start date input that allows editing in German format and validates on blur.
+ */
+function StartDateInput({
+  value,
+  onChange,
+  minDate,
+  maxDate,
+}: {
+  value: string; // YYYY-MM-DD
+  onChange: (value: string) => void;
+  minDate: string; // YYYY-MM-DD - earliest valid start date
+  maxDate?: string; // YYYY-MM-DD - latest valid start date (for overlap limits)
+}) {
+  const [localValue, setLocalValue] = useState(formatDateGerman(value));
+  const [hasError, setHasError] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync local value when external value changes and not focused
+  useEffect(() => {
+    if (document.activeElement !== inputRef.current) {
+      setLocalValue(formatDateGerman(value));
+      setHasError(false);
+    }
+  }, [value]);
+
+  const handleFocus = () => {
+    setLocalValue(formatDateGerman(value));
+    setHasError(false);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalValue(e.target.value);
+    setHasError(false);
+  };
+
+  const handleBlur = () => {
+    const parsed = parseDateGerman(localValue);
+    
+    if (parsed && isValidDateString(parsed)) {
+      let finalDate = parsed;
+      
+      // Enforce minDate
+      if (finalDate < minDate) {
+        finalDate = minDate;
+      }
+      
+      // Enforce maxDate if provided
+      if (maxDate && finalDate > maxDate) {
+        finalDate = maxDate;
+      }
+      
+      setLocalValue(formatDateGerman(finalDate));
+      setHasError(false);
+      onChange(finalDate);
+    } else {
+      // Invalid date, revert to original
+      setLocalValue(formatDateGerman(value));
+      setHasError(true);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      inputRef.current?.blur();
+    }
+  };
+
+  return (
+    <input
+      ref={inputRef}
+      type="text"
+      value={localValue}
+      onChange={handleChange}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+      placeholder="TT.MM.JJJJ"
+      className={`w-28 rounded border px-2 py-1 text-sm ${
+        hasError ? 'border-red-300 bg-red-50' : 'border-gray-300'
+      }`}
+    />
+  );
+}
+
 interface DistributionPlanBuilderProps {
   blocks: DistributionBlock[];
   onChange: (blocks: DistributionBlock[]) => void;
@@ -286,15 +371,15 @@ export function DistributionPlanBuilder({
     // Update the target block
     const block = { ...newBlocks[index], ...updates };
 
-    // Recalculate duration if dates changed
-    if (updates.startDate || updates.endDate) {
+    // Recalculate duration if dates changed (and duration wasn't explicitly set)
+    if ((updates.startDate || updates.endDate) && !updates.durationDays) {
       const days = daysBetween(block.startDate, block.endDate);
       if (days !== null) {
         block.durationDays = days + 1; // Include both start and end day
       }
     }
 
-    // Recalculate end date if duration changed
+    // Recalculate end date if duration changed (and end date wasn't explicitly set)
     if (updates.durationDays && !updates.endDate) {
       const newEnd = addDays(block.startDate, updates.durationDays - 1);
       if (newEnd) {
@@ -302,25 +387,44 @@ export function DistributionPlanBuilder({
       }
     }
 
-    newBlocks[index] = block;
-
-    // Cascade changes to following blocks - adjust their start dates
-    for (let i = index + 1; i < newBlocks.length; i++) {
-      const prevBlock = newBlocks[i - 1];
-      const currentBlock = newBlocks[i];
-      const newStartDate = addDays(prevBlock.endDate, 1);
-
-      if (newStartDate && newStartDate !== currentBlock.startDate) {
-        const newEndDate = addDays(newStartDate, currentBlock.durationDays - 1);
-        newBlocks[i] = {
-          ...currentBlock,
-          startDate: newStartDate,
-          endDate: newEndDate ?? currentBlock.endDate,
-        };
+    // Recalculate end date if start date changed (keep duration)
+    if (updates.startDate && !updates.endDate && !updates.durationDays) {
+      const newEnd = addDays(updates.startDate, block.durationDays - 1);
+      if (newEnd) {
+        block.endDate = newEnd;
       }
     }
 
+    newBlocks[index] = block;
     onChange(newBlocks);
+  };
+  
+  // Calculate overlap between two blocks (positive = overlap days, 0 = seamless, negative = gap)
+  // If blockB starts before or on blockA's end date, there's overlap
+  const calculateOverlapOrGap = (blockA: DistributionBlock, blockB: DistributionBlock): number => {
+    // Gap = days between blockA end and blockB start
+    // If blockA ends Oct 31 and blockB starts Nov 1, gap = 0 (seamless)
+    // If blockA ends Oct 31 and blockB starts Nov 2, gap = 1 (1 day gap)
+    // If blockA ends Oct 31 and blockB starts Oct 31, overlap = 1 (same day)
+    // If blockA ends Oct 31 and blockB starts Oct 1, overlap = 31 (Oct 1-31)
+    const daysDiff = daysBetween(blockA.endDate, blockB.startDate);
+    if (daysDiff === null) return 0;
+    
+    // daysDiff = blockB.startDate - blockA.endDate
+    // If daysDiff = 1, seamless (gap = 0)
+    // If daysDiff > 1, gap = daysDiff - 1
+    // If daysDiff <= 0, overlap = -daysDiff + 1 (includes both boundary days)
+    
+    if (daysDiff <= 0) {
+      // Overlap: blockB starts on or before blockA ends
+      return -daysDiff + 1; // positive = overlap days
+    } else if (daysDiff === 1) {
+      // Seamless transition
+      return 0;
+    } else {
+      // Gap: blockB starts after blockA ends (with days in between)
+      return -(daysDiff - 1); // negative = gap days
+    }
   };
 
   const removeBlock = (index: number) => {
@@ -468,66 +572,121 @@ export function DistributionPlanBuilder({
 
       {/* Blocks list */}
       <div className="space-y-3">
-        {blocks.map((block, index) => (
-          <div
-            key={index}
-            className={`rounded-lg border p-4 ${
-              editingBlock === index ? 'border-primary-500 bg-primary-50' : 'border-gray-200'
-            }`}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-2">
-                <div className={`h-4 w-4 rounded ${getParentColor(block.parent)}`} />
-                <span className="font-medium">
-                  Block {index + 1}: {getParentLabel(block.parent)}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => removeBlock(index)}
-                className="text-gray-400 hover:text-red-500"
-                aria-label="Block entfernen"
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="mt-3 grid gap-3 sm:grid-cols-3">
-              <div>
-                <label className="mb-1 block text-xs text-gray-500">Von</label>
-                <p className="font-medium">{formatDateGerman(block.startDate)}</p>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-gray-500">Bis</label>
-                <EndDateInput
-                  value={block.endDate}
-                  onChange={(endDate) => updateBlock(index, { endDate })}
-                  minDate={addDays(block.startDate, FLAT_RATE_CONFIG.minBlockDays - 1) ?? block.startDate}
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-gray-500">Dauer</label>
-                <div className="flex items-center gap-2">
-                  <DurationInput
-                    value={block.durationDays}
-                    onChange={(days) => updateBlock(index, { durationDays: days })}
-                    min={FLAT_RATE_CONFIG.minBlockDays}
-                    max={remainingDays + block.durationDays}
-                  />
-                  <span className="text-sm text-gray-500">Tage</span>
+        {blocks.map((block, index) => {
+          const prevBlock = index > 0 ? blocks[index - 1] : null;
+          // overlapOrGap: positive = overlap days, 0 = seamless, negative = gap days
+          const overlapOrGap = prevBlock ? calculateOverlapOrGap(prevBlock, block) : 0;
+          const overlap = overlapOrGap > 0 ? overlapOrGap : 0;
+          const gap = overlapOrGap < 0 ? -overlapOrGap : 0;
+          const hasInvalidOverlap = overlap > FLAT_RATE_CONFIG.overlapDaysAllowed;
+          
+          // Min start date for this block
+          const minStartDate = index === 0 
+            ? startDate ?? block.startDate 
+            : addDays(prevBlock!.startDate, 1) ?? block.startDate;
+          
+          // Max start date allows up to overlapDaysAllowed overlap with previous block
+          const maxStartDate = prevBlock 
+            ? addDays(prevBlock.endDate, FLAT_RATE_CONFIG.overlapDaysAllowed) 
+            : undefined;
+          
+          return (
+            <div key={index}>
+              {/* Show gap/overlap indicator between blocks */}
+              {prevBlock && (
+                <div className={`mb-2 flex items-center justify-center gap-2 rounded px-3 py-1.5 text-xs ${
+                  hasInvalidOverlap 
+                    ? 'bg-red-100 text-red-700' 
+                    : overlap > 0 
+                      ? 'bg-amber-100 text-amber-700'
+                      : gap > 0
+                        ? 'bg-gray-100 text-gray-600'
+                        : 'bg-green-100 text-green-700'
+                }`}>
+                  {overlap > 0 ? (
+                    <>
+                      <span>↔ Überlappung: {overlap} Tage</span>
+                      {hasInvalidOverlap && (
+                        <span className="font-medium">(max. {FLAT_RATE_CONFIG.overlapDaysAllowed} erlaubt)</span>
+                      )}
+                    </>
+                  ) : gap > 0 ? (
+                    <span>⋯ Lücke: {gap} Tage</span>
+                  ) : (
+                    <span>→ Nahtloser Übergang</span>
+                  )}
                 </div>
+              )}
+              
+              <div
+                className={`rounded-lg border p-4 ${
+                  editingBlock === index ? 'border-primary-500 bg-primary-50' : 'border-gray-200'
+                } ${hasInvalidOverlap ? 'border-red-300' : ''}`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className={`h-4 w-4 rounded ${getParentColor(block.parent)}`} />
+                    <span className="font-medium">
+                      Block {index + 1}: {getParentLabel(block.parent)}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeBlock(index)}
+                    className="text-gray-400 hover:text-red-500"
+                    aria-label="Block entfernen"
+                  >
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-500">Von</label>
+                    {index === 0 ? (
+                      <p className="font-medium">{formatDateGerman(block.startDate)}</p>
+                    ) : (
+                      <StartDateInput
+                        value={block.startDate}
+                        onChange={(startDate) => updateBlock(index, { startDate })}
+                        minDate={minStartDate}
+                        maxDate={maxStartDate ?? undefined}
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-500">Bis</label>
+                    <EndDateInput
+                      value={block.endDate}
+                      onChange={(endDate) => updateBlock(index, { endDate })}
+                      minDate={addDays(block.startDate, FLAT_RATE_CONFIG.minBlockDays - 1) ?? block.startDate}
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-500">Dauer</label>
+                    <div className="flex items-center gap-2">
+                      <DurationInput
+                        value={block.durationDays}
+                        onChange={(days) => updateBlock(index, { durationDays: days })}
+                        min={FLAT_RATE_CONFIG.minBlockDays}
+                        max={remainingDays + block.durationDays}
+                      />
+                      <span className="text-sm text-gray-500">Tage</span>
+                    </div>
+                  </div>
+                </div>
+
+                {block.durationDays < FLAT_RATE_CONFIG.minBlockDays && (
+                  <p className="mt-2 text-sm text-red-600">
+                    Mindestdauer: {FLAT_RATE_CONFIG.minBlockDays} Tage
+                  </p>
+                )}
               </div>
             </div>
-
-            {block.durationDays < FLAT_RATE_CONFIG.minBlockDays && (
-              <p className="mt-2 text-sm text-red-600">
-                Mindestdauer: {FLAT_RATE_CONFIG.minBlockDays} Tage
-              </p>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Add block buttons */}
