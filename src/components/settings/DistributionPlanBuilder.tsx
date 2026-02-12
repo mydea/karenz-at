@@ -1,7 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import type { DistributionBlock, ChildcareAllowanceModel, BirthCondition } from '@/types';
 import { FLAT_RATE_CONFIG, INCOME_BASED_CONFIG, MUTTERSCHUTZ_CONFIG } from '@/data/constants';
-import { addDays, daysBetween, formatDateGerman, parseDateGerman, isValidDateString } from '@/utils/dates';
+import {
+  addDays,
+  daysBetween,
+  formatDateGerman,
+  parseDateGerman,
+  isValidDateString,
+} from '@/utils/dates';
 import { calculateMutterschutz } from '@/utils/calculations';
 
 /**
@@ -101,7 +107,7 @@ function EndDateInput({
 
   const handleBlur = () => {
     const parsed = parseDateGerman(localValue);
-    
+
     if (parsed && isValidDateString(parsed)) {
       // Check if date is at least minDate
       if (parsed >= minDate) {
@@ -182,20 +188,20 @@ function StartDateInput({
 
   const handleBlur = () => {
     const parsed = parseDateGerman(localValue);
-    
+
     if (parsed && isValidDateString(parsed)) {
       let finalDate = parsed;
-      
+
       // Enforce minDate
       if (finalDate < minDate) {
         finalDate = minDate;
       }
-      
+
       // Enforce maxDate if provided
       if (maxDate && finalDate > maxDate) {
         finalDate = maxDate;
       }
-      
+
       setLocalValue(formatDateGerman(finalDate));
       setHasError(false);
       onChange(finalDate);
@@ -258,33 +264,33 @@ export function DistributionPlanBuilder({
 
   // KBG starts the day after Mutterschutz ends
   const startDate = mutterschutz.endDate ? addDays(mutterschutz.endDate, 1) : null;
-  
+
   // Refs to access current values without triggering effect reruns
   const blocksRef = useRef(blocks);
   const onChangeRef = useRef(onChange);
   blocksRef.current = blocks;
   onChangeRef.current = onChange;
-  
+
   // When the KBG start date changes (e.g., birth conditions modified), shift all blocks
   useEffect(() => {
     const currentBlocks = blocksRef.current;
-    
+
     // Skip if no blocks or no start date
     if (!startDate || currentBlocks.length === 0) return;
-    
+
     // Check if first block's start date matches expected start date
     const firstBlockStart = currentBlocks[0].startDate;
     if (firstBlockStart === startDate) return;
-    
+
     // Calculate the difference and shift all blocks
     const daysDiff = daysBetween(firstBlockStart, startDate);
     if (daysDiff === null || daysDiff === 0) return;
-    
+
     // Shift all blocks by the difference
-    const shiftedBlocks = currentBlocks.map(block => {
+    const shiftedBlocks = currentBlocks.map((block) => {
       const newStartDate = addDays(block.startDate, daysDiff);
       const newEndDate = addDays(block.endDate, daysDiff);
-      
+
       if (newStartDate && newEndDate) {
         return {
           ...block,
@@ -294,10 +300,10 @@ export function DistributionPlanBuilder({
       }
       return block;
     });
-    
+
     onChangeRef.current(shiftedBlocks);
   }, [startDate]);
-  
+
   // Use names if provided, otherwise fallback to default labels
   const parent1Label = parent1Name || 'Elternteil 1';
   const parent2Label = parent2Name || 'Elternteil 2';
@@ -305,16 +311,17 @@ export function DistributionPlanBuilder({
 
   // Get max duration based on model and whether both parents take leave
   const config = model.type === 'flatRate' ? FLAT_RATE_CONFIG : INCOME_BASED_CONFIG;
-  
+
   // The total allowance duration includes Mutterschutz after birth
   // So actual KBG days = total days - post-birth Mutterschutz days
   const totalAllowanceDays =
     model.type === 'flatRate'
-      ? model.chosenDurationDays ?? (isBothParents ? config.maxDaysBothParents : config.maxDaysSingleParent)
+      ? (model.chosenDurationDays ??
+        (isBothParents ? config.maxDaysBothParents : config.maxDaysSingleParent))
       : isBothParents
         ? INCOME_BASED_CONFIG.maxDaysBothParents
         : INCOME_BASED_CONFIG.maxDaysSingleParent;
-  
+
   // Subtract post-birth Mutterschutz to get actual KBG days available
   const maxDays = totalAllowanceDays - postBirthMutterschutzDays;
 
@@ -344,9 +351,7 @@ export function DistributionPlanBuilder({
 
     // Calculate start date for new block
     const lastBlock = blocks[blocks.length - 1];
-    const newStartDate = lastBlock
-      ? addDays(lastBlock.endDate, 1) ?? startDate
-      : startDate;
+    const newStartDate = lastBlock ? (addDays(lastBlock.endDate, 1) ?? startDate) : startDate;
 
     if (!newStartDate) return;
 
@@ -398,7 +403,7 @@ export function DistributionPlanBuilder({
     newBlocks[index] = block;
     onChange(newBlocks);
   };
-  
+
   // Calculate overlap between two blocks (positive = overlap days, 0 = seamless, negative = gap)
   // If blockB starts before or on blockA's end date, there's overlap
   const calculateOverlapOrGap = (blockA: DistributionBlock, blockB: DistributionBlock): number => {
@@ -408,16 +413,17 @@ export function DistributionPlanBuilder({
     // If blockA ends Oct 31 and blockB starts Oct 31, overlap = 1 (same day)
     // If blockA ends Oct 31 and blockB starts Oct 1, overlap = 31 (Oct 1-31)
     const daysDiff = daysBetween(blockA.endDate, blockB.startDate);
+
     if (daysDiff === null) return 0;
-    
+
     // daysDiff = blockB.startDate - blockA.endDate
     // If daysDiff = 1, seamless (gap = 0)
     // If daysDiff > 1, gap = daysDiff - 1
     // If daysDiff <= 0, overlap = -daysDiff + 1 (includes both boundary days)
-    
+
     if (daysDiff <= 0) {
       // Overlap: blockB starts on or before blockA ends
-      return -daysDiff + 1; // positive = overlap days
+      return -daysDiff; // positive = overlap days
     } else if (daysDiff === 1) {
       // Seamless transition
       return 0;
@@ -439,7 +445,7 @@ export function DistributionPlanBuilder({
 
   // Total timeline includes Mutterschutz + KBG
   const totalTimelineDays = mutterschutzDays + maxDays;
-  
+
   // Calculate percentage for visual bar (relative to total timeline)
   const getBlockWidth = (days: number) => Math.max((days / totalTimelineDays) * 100, 3);
 
@@ -458,17 +464,20 @@ export function DistributionPlanBuilder({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="h-3 w-3 rounded bg-purple-500" />
-              <span className="text-sm font-medium text-purple-900">
-                Mutterschutz (Wochengeld)
-              </span>
+              <span className="text-sm font-medium text-purple-900">Mutterschutz (Wochengeld)</span>
             </div>
             <span className="text-sm text-purple-700">
               {formatDateGerman(mutterschutz.startDate)} – {formatDateGerman(mutterschutz.endDate)}
             </span>
           </div>
           <div className="mt-1 flex flex-wrap gap-x-4 text-xs text-purple-600">
-            <span>{preBirthMutterschutzDays} Tage vor Geburt ({MUTTERSCHUTZ_CONFIG.weeksBeforeBirth} Wo.)</span>
-            <span>{postBirthMutterschutzDays} Tage nach Geburt ({mutterschutz.weeksAfterBirth} Wo.)</span>
+            <span>
+              {preBirthMutterschutzDays} Tage vor Geburt ({MUTTERSCHUTZ_CONFIG.weeksBeforeBirth}{' '}
+              Wo.)
+            </span>
+            <span>
+              {postBirthMutterschutzDays} Tage nach Geburt ({mutterschutz.weeksAfterBirth} Wo.)
+            </span>
             <span>→ KBG beginnt am {startDate ? formatDateGerman(startDate) : '–'}</span>
           </div>
         </div>
@@ -478,11 +487,10 @@ export function DistributionPlanBuilder({
       <div className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
           <span className="text-gray-600">
-            Gesamtanspruch: {totalAllowanceDays} Tage (davon {postBirthMutterschutzDays} Tage Mutterschutz)
+            Gesamtanspruch: {totalAllowanceDays} Tage (davon {postBirthMutterschutzDays} Tage
+            Mutterschutz)
           </span>
-          <span className="text-gray-600">
-            KBG: {maxDays} Tage
-          </span>
+          <span className="text-gray-600">KBG: {maxDays} Tage</span>
           <span className={remainingDays < 0 ? 'text-red-600' : 'text-gray-600'}>
             Noch verfügbar: {remainingDays} Tage
           </span>
@@ -501,7 +509,7 @@ export function DistributionPlanBuilder({
                 <span className="truncate px-1">MS↓</span>
               </div>
             )}
-            
+
             {/* Post-birth Mutterschutz block */}
             {postBirthMutterschutzDays > 0 && (
               <div
@@ -512,7 +520,7 @@ export function DistributionPlanBuilder({
                 <span className="truncate px-1">MS↑</span>
               </div>
             )}
-            
+
             {/* KBG blocks */}
             {blocks.length === 0 && startDate ? (
               <div className="flex flex-1 items-center justify-center text-sm text-gray-400">
@@ -524,16 +532,14 @@ export function DistributionPlanBuilder({
                   <div
                     key={index}
                     className={`relative flex items-center justify-center text-xs font-medium text-white transition-all ${getParentColor(block.parent)} ${
-                      editingBlock === index ? 'ring-2 ring-offset-1 ring-primary-400' : ''
+                      editingBlock === index ? 'ring-2 ring-primary-400 ring-offset-1' : ''
                     }`}
                     style={{ width: `${getBlockWidth(block.durationDays)}%` }}
                     onClick={() => setEditingBlock(editingBlock === index ? null : index)}
                     role="button"
                     tabIndex={0}
                   >
-                    <span className="truncate px-1">
-                      {block.durationDays}d
-                    </span>
+                    <span className="truncate px-1">{block.durationDays}d</span>
                   </div>
                 ))}
                 {remainingDays > 0 && (
@@ -561,11 +567,15 @@ export function DistributionPlanBuilder({
           </div>
           <div className="flex items-center gap-2">
             <div className="h-3 w-3 rounded bg-primary-500" />
-            <span>{parent1Label}: {parent1Days}d</span>
+            <span>
+              {parent1Label}: {parent1Days}d
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="h-3 w-3 rounded bg-blue-500" />
-            <span>{parent2Label}: {parent2Days}d</span>
+            <span>
+              {parent2Label}: {parent2Days}d
+            </span>
           </div>
         </div>
       </div>
@@ -579,35 +589,40 @@ export function DistributionPlanBuilder({
           const overlap = overlapOrGap > 0 ? overlapOrGap : 0;
           const gap = overlapOrGap < 0 ? -overlapOrGap : 0;
           const hasInvalidOverlap = overlap > FLAT_RATE_CONFIG.overlapDaysAllowed;
-          
+
           // Min start date for this block
-          const minStartDate = index === 0 
-            ? startDate ?? block.startDate 
-            : addDays(prevBlock!.startDate, 1) ?? block.startDate;
-          
+          const minStartDate =
+            index === 0
+              ? (startDate ?? block.startDate)
+              : (addDays(prevBlock!.startDate, 1) ?? block.startDate);
+
           // Max start date allows up to overlapDaysAllowed overlap with previous block
-          const maxStartDate = prevBlock 
-            ? addDays(prevBlock.endDate, FLAT_RATE_CONFIG.overlapDaysAllowed) 
+          const maxStartDate = prevBlock
+            ? addDays(prevBlock.endDate, FLAT_RATE_CONFIG.overlapDaysAllowed)
             : undefined;
-          
+
           return (
             <div key={index}>
               {/* Show gap/overlap indicator between blocks */}
               {prevBlock && (
-                <div className={`mb-2 flex items-center justify-center gap-2 rounded px-3 py-1.5 text-xs ${
-                  hasInvalidOverlap 
-                    ? 'bg-red-100 text-red-700' 
-                    : overlap > 0 
-                      ? 'bg-amber-100 text-amber-700'
-                      : gap > 0
-                        ? 'bg-gray-100 text-gray-600'
-                        : 'bg-green-100 text-green-700'
-                }`}>
+                <div
+                  className={`mb-2 flex items-center justify-center gap-2 rounded px-3 py-1.5 text-xs ${
+                    hasInvalidOverlap
+                      ? 'bg-red-100 text-red-700'
+                      : overlap > 0
+                        ? 'bg-amber-100 text-amber-700'
+                        : gap > 0
+                          ? 'bg-gray-100 text-gray-600'
+                          : 'bg-green-100 text-green-700'
+                  }`}
+                >
                   {overlap > 0 ? (
                     <>
                       <span>↔ Überlappung: {overlap} Tage</span>
                       {hasInvalidOverlap && (
-                        <span className="font-medium">(max. {FLAT_RATE_CONFIG.overlapDaysAllowed} erlaubt)</span>
+                        <span className="font-medium">
+                          (max. {FLAT_RATE_CONFIG.overlapDaysAllowed} erlaubt)
+                        </span>
                       )}
                     </>
                   ) : gap > 0 ? (
@@ -617,7 +632,7 @@ export function DistributionPlanBuilder({
                   )}
                 </div>
               )}
-              
+
               <div
                 className={`rounded-lg border p-4 ${
                   editingBlock === index ? 'border-primary-500 bg-primary-50' : 'border-gray-200'
@@ -637,7 +652,12 @@ export function DistributionPlanBuilder({
                     aria-label="Block entfernen"
                   >
                     <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -661,7 +681,10 @@ export function DistributionPlanBuilder({
                     <EndDateInput
                       value={block.endDate}
                       onChange={(endDate) => updateBlock(index, { endDate })}
-                      minDate={addDays(block.startDate, FLAT_RATE_CONFIG.minBlockDays - 1) ?? block.startDate}
+                      minDate={
+                        addDays(block.startDate, FLAT_RATE_CONFIG.minBlockDays - 1) ??
+                        block.startDate
+                      }
                     />
                   </div>
                   <div>
@@ -735,12 +758,14 @@ export function DistributionPlanBuilder({
                 if (!startDate) return;
                 const endDate = addDays(startDate, maxDays - 1);
                 if (!endDate) return;
-                onChange([{
-                  parent: 'parent1',
-                  startDate,
-                  endDate,
-                  durationDays: maxDays,
-                }]);
+                onChange([
+                  {
+                    parent: 'parent1',
+                    startDate,
+                    endDate,
+                    durationDays: maxDays,
+                  },
+                ]);
               }}
               className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50"
             >
@@ -807,7 +832,10 @@ export function DistributionPlanBuilder({
 
       {/* Info about rules */}
       <div className="text-xs text-gray-500">
-        <p>Regeln: Min. {FLAT_RATE_CONFIG.minBlockDays} Tage pro Block, max. {FLAT_RATE_CONFIG.maxBlocks} Blöcke, max. {FLAT_RATE_CONFIG.maxSwitches} Wechsel</p>
+        <p>
+          Regeln: Min. {FLAT_RATE_CONFIG.minBlockDays} Tage pro Block, max.{' '}
+          {FLAT_RATE_CONFIG.maxBlocks} Blöcke, max. {FLAT_RATE_CONFIG.maxSwitches} Wechsel
+        </p>
       </div>
     </div>
   );
