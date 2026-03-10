@@ -70,6 +70,16 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   );
 }
 
+const SHORT_MONTHS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+
+function formatShortLabel(month: string): string {
+  // month is in format "YYYY-MM"
+  const [year, monthNum] = month.split('-');
+  const monthIndex = parseInt(monthNum!, 10) - 1;
+  const shortYear = year!.slice(2);
+  return `${SHORT_MONTHS[monthIndex]} '${shortYear}`;
+}
+
 export function MonthlyBreakdownChart({
   data,
   regularMonthlyIncome,
@@ -89,36 +99,52 @@ export function MonthlyBreakdownChart({
   const totalKbg = data.reduce((sum, d) => sum + d.kbgAmount, 0);
   const grandTotal = totalWochengeld + totalKbg;
 
+  // Add short labels for x-axis
+  const chartData = data.map((item) => ({
+    ...item,
+    shortLabel: formatShortLabel(item.month),
+  }));
+
+  // Determine if we need to skip labels (for many months)
+  const labelInterval = data.length > 12 ? 1 : 0;
+
   return (
     <div className="space-y-4">
-      <div className="h-80">
+      <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
             <XAxis
-              dataKey="monthLabel"
-              tick={{ fontSize: 11 }}
-              angle={-45}
-              textAnchor="end"
-              height={80}
-              interval={0}
+              dataKey="shortLabel"
+              tick={{ fontSize: 11, fill: '#6b7280' }}
+              tickLine={false}
+              axisLine={{ stroke: '#e5e7eb' }}
+              interval={labelInterval}
             />
             <YAxis
               tickFormatter={(value) => `€${value}`}
-              tick={{ fontSize: 12 }}
-              width={60}
+              tick={{ fontSize: 11, fill: '#6b7280' }}
+              tickLine={false}
+              axisLine={false}
+              width={50}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Legend verticalAlign="top" height={36} />
+            <Legend 
+              verticalAlign="top" 
+              height={32}
+              iconType="circle"
+              iconSize={8}
+              wrapperStyle={{ fontSize: '12px' }}
+            />
             {regularMonthlyIncome && regularMonthlyIncome > 0 && (
               <ReferenceLine
                 y={regularMonthlyIncome}
                 stroke="#9ca3af"
-                strokeDasharray="5 5"
+                strokeDasharray="4 4"
                 label={{
-                  value: `Einkommen: ${formatCurrency(regularMonthlyIncome)}`,
-                  position: 'right',
-                  fontSize: 11,
+                  value: `Netto: ${formatCurrency(regularMonthlyIncome)}`,
+                  position: 'insideTopRight',
+                  fontSize: 10,
                   fill: '#6b7280',
                 }}
               />
@@ -135,7 +161,7 @@ export function MonthlyBreakdownChart({
               name="KBG"
               stackId="benefits"
               fill="#3b82f6"
-              radius={[4, 4, 0, 0]}
+              radius={[3, 3, 0, 0]}
             />
           </BarChart>
         </ResponsiveContainer>
