@@ -162,6 +162,7 @@ export default function SettingsPage() {
           isBothParents={isBothParents}
           parent1Name={userData.parent1.name}
           parent2Name={userData.parent2.name}
+          parent1Data={userData.parent1}
         />
       )}
 

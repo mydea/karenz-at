@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import type { DistributionBlock, ChildcareAllowanceModel, BirthCondition } from '@/types';
+import type { DistributionBlock, ChildcareAllowanceModel, BirthCondition, ParentData } from '@/types';
 import { FLAT_RATE_CONFIG, INCOME_BASED_CONFIG, MUTTERSCHUTZ_CONFIG } from '@/data/constants';
 import {
   addDays,
@@ -8,7 +8,7 @@ import {
   parseDateGerman,
   isValidDateString,
 } from '@/utils/dates';
-import { calculateMutterschutz } from '@/utils/calculations';
+import { calculateMutterschutz, hasWochengeldEntitlement } from '@/utils/calculations';
 
 /**
  * Duration input that allows free typing and only validates on blur.
@@ -244,6 +244,7 @@ interface DistributionPlanBuilderProps {
   isBothParents: boolean;
   parent1Name?: string;
   parent2Name?: string;
+  parent1Data?: ParentData;
 }
 
 export function DistributionPlanBuilder({
@@ -255,6 +256,7 @@ export function DistributionPlanBuilder({
   isBothParents,
   parent1Name,
   parent2Name,
+  parent1Data,
 }: DistributionPlanBuilderProps) {
   // Calculate Mutterschutz period
   const mutterschutz = calculateMutterschutz(dueDate, birthConditions);
@@ -262,8 +264,13 @@ export function DistributionPlanBuilder({
   const postBirthMutterschutzDays = mutterschutz.weeksAfterBirth * 7;
   const mutterschutzDays = preBirthMutterschutzDays + postBirthMutterschutzDays;
 
-  // KBG starts the day after Mutterschutz ends
-  const startDate = mutterschutz.endDate ? addDays(mutterschutz.endDate, 1) : null;
+  // Check if mother has Wochengeld entitlement
+  const motherHasWochengeld = parent1Data ? hasWochengeldEntitlement(parent1Data) : true;
+
+  // KBG starts the day after Mutterschutz ends (with Wochengeld) or on birth date (without)
+  const startDate = motherHasWochengeld
+    ? (mutterschutz.endDate ? addDays(mutterschutz.endDate, 1) : null)
+    : dueDate;
 
   // Refs to access current values without triggering effect reruns
   const blocksRef = useRef(blocks);
@@ -325,8 +332,8 @@ export function DistributionPlanBuilder({
   // Get max duration based on model and whether both parents take leave
   const config = model.type === 'flatRate' ? FLAT_RATE_CONFIG : INCOME_BASED_CONFIG;
 
-  // The total allowance duration includes Mutterschutz after birth
-  // So actual KBG days = total days - post-birth Mutterschutz days
+  // The total allowance duration includes Mutterschutz after birth (when entitled)
+  // So actual KBG days = total days - post-birth Mutterschutz days (if Wochengeld)
   const totalAllowanceDays =
     model.type === 'flatRate'
       ? (model.chosenDurationDays ??
@@ -335,8 +342,10 @@ export function DistributionPlanBuilder({
         ? INCOME_BASED_CONFIG.maxDaysBothParents
         : INCOME_BASED_CONFIG.maxDaysSingleParent;
 
-  // Subtract post-birth Mutterschutz to get actual KBG days available
-  const maxDays = totalAllowanceDays - postBirthMutterschutzDays;
+  // Subtract post-birth Mutterschutz to get actual KBG days available (only if Wochengeld)
+  const maxDays = motherHasWochengeld
+    ? totalAllowanceDays - postBirthMutterschutzDays
+    : totalAllowanceDays;
 
   // Calculate total days used
   const totalDaysUsed = blocks.reduce((sum, b) => sum + b.durationDays, 0);
@@ -350,9 +359,13 @@ export function DistributionPlanBuilder({
     .filter((b) => b.parent === 'parent2')
     .reduce((sum, b) => sum + b.durationDays, 0);
 
-  // Parent 1 (mother) totals including Mutterschutz
-  const parent1DaysAfterBirth = parent1Days + postBirthMutterschutzDays;
-  const parent1TotalDays = parent1Days + postBirthMutterschutzDays + preBirthMutterschutzDays;
+  // Parent 1 (mother) totals including Mutterschutz (only if Wochengeld)
+  const parent1DaysAfterBirth = motherHasWochengeld
+    ? parent1Days + postBirthMutterschutzDays
+    : parent1Days;
+  const parent1TotalDays = motherHasWochengeld
+    ? parent1Days + postBirthMutterschutzDays + preBirthMutterschutzDays
+    : parent1Days;
 
   // Minimum days for second parent (flat-rate only)
   const minParent2Days =
@@ -462,8 +475,8 @@ export function DistributionPlanBuilder({
   const getParentLabel = (parent: 'parent1' | 'parent2') =>
     parent === 'parent1' ? parent1Label : parent2Label;
 
-  // Total timeline includes Mutterschutz + KBG
-  const totalTimelineDays = mutterschutzDays + maxDays;
+  // Total timeline includes Mutterschutz + KBG (only if Wochengeld)
+  const totalTimelineDays = motherHasWochengeld ? mutterschutzDays + maxDays : maxDays;
 
   // Calculate percentage for visual bar (relative to total timeline)
   const getBlockWidth = (days: number) => Math.max((days / totalTimelineDays) * 100, 3);
@@ -486,8 +499,8 @@ export function DistributionPlanBuilder({
         </p>
       </div>
 
-      {/* Mutterschutz info */}
-      {mutterschutz.startDate && mutterschutz.endDate && (
+      {/* Mutterschutz info - only show when mother has Wochengeld */}
+      {motherHasWochengeld && mutterschutz.startDate && mutterschutz.endDate && (
         <div className="rounded-lg border border-purple-200 bg-purple-50 p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -511,14 +524,33 @@ export function DistributionPlanBuilder({
         </div>
       )}
 
+      {/* Info box when no Wochengeld - KBG starts on birth date */}
+      {!motherHasWochengeld && (
+        <div className="rounded-lg border border-green-200 bg-green-50 p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="h-3 w-3 rounded bg-green-500" />
+              <span className="text-sm font-medium text-green-900">KBG ab Geburt</span>
+            </div>
+            <span className="text-sm text-green-700">
+              ab {startDate ? formatDateGerman(startDate) : '–'}
+            </span>
+          </div>
+          <p className="mt-1 text-xs text-green-600">
+            Ohne Wochengeld-Anspruch beginnt das Kinderbetreuungsgeld direkt mit dem Tag der Geburt.
+          </p>
+        </div>
+      )}
+
       {/* Visual timeline */}
       <div className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
           <span className="text-gray-600">
-            Gesamtanspruch: {totalAllowanceDays} Tage (davon {postBirthMutterschutzDays} Tage
-            Mutterschutz)
+            {motherHasWochengeld
+              ? `Gesamtanspruch: ${totalAllowanceDays} Tage (davon ${postBirthMutterschutzDays} Tage Mutterschutz/Wochengeld)`
+              : `Gesamtanspruch: ${totalAllowanceDays} Tage KBG`}
           </span>
-          <span className="text-gray-600">KBG: {maxDays} Tage</span>
+          {motherHasWochengeld && <span className="text-gray-600">KBG: {maxDays} Tage</span>}
           <span className={remainingDays < 0 ? 'text-red-600' : 'text-gray-600'}>
             Noch verfügbar: {remainingDays} Tage
           </span>
@@ -527,8 +559,8 @@ export function DistributionPlanBuilder({
         {/* Timeline bar */}
         <div className="relative h-12 overflow-hidden rounded-lg bg-gray-100">
           <div className="flex h-full">
-            {/* Pre-birth Mutterschutz block */}
-            {preBirthMutterschutzDays > 0 && (
+            {/* Pre-birth Mutterschutz block - only when mother has Wochengeld */}
+            {motherHasWochengeld && preBirthMutterschutzDays > 0 && (
               <div
                 className="flex items-center justify-center bg-purple-400 text-xs font-medium text-white"
                 style={{ width: `${getBlockWidth(preBirthMutterschutzDays)}%` }}
@@ -538,8 +570,8 @@ export function DistributionPlanBuilder({
               </div>
             )}
 
-            {/* Post-birth Mutterschutz block */}
-            {postBirthMutterschutzDays > 0 && (
+            {/* Post-birth Mutterschutz block - only when mother has Wochengeld */}
+            {motherHasWochengeld && postBirthMutterschutzDays > 0 && (
               <div
                 className="flex items-center justify-center bg-purple-600 text-xs font-medium text-white"
                 style={{ width: `${getBlockWidth(postBirthMutterschutzDays)}%` }}
@@ -622,21 +654,28 @@ export function DistributionPlanBuilder({
 
         {/* Legend */}
         <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="h-3 w-3 rounded bg-purple-400" />
-            <span>MS vor Geburt: {preBirthMutterschutzDays}d</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="h-3 w-3 rounded bg-purple-600" />
-            <span>MS nach Geburt: {postBirthMutterschutzDays}d</span>
-          </div>
+          {/* Mutterschutz legend entries - only when mother has Wochengeld */}
+          {motherHasWochengeld && (
+            <>
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded bg-purple-400" />
+                <span>MS vor Geburt: {preBirthMutterschutzDays}d</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded bg-purple-600" />
+                <span>MS nach Geburt: {postBirthMutterschutzDays}d</span>
+              </div>
+            </>
+          )}
           <div className="flex items-center gap-2">
             <div className="h-3 w-3 rounded bg-primary-500" />
             <span>
               {parent1Label}: {parent1Days}d
-              <span className="text-gray-500">
-                {' '}({parent1DaysAfterBirth}d nach Geburt, {parent1TotalDays}d gesamt)
-              </span>
+              {motherHasWochengeld && (
+                <span className="text-gray-500">
+                  {' '}({parent1DaysAfterBirth}d nach Geburt, {parent1TotalDays}d gesamt)
+                </span>
+              )}
             </span>
           </div>
           <div className="flex items-center gap-2">
