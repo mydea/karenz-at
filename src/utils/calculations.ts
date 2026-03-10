@@ -116,6 +116,47 @@ export function calculateIncomeBasedDailyRate(monthlyNetIncome: number): number 
 }
 
 /**
+ * Calculate daily Wochengeld (maternity allowance).
+ * Wochengeld is approximately equal to the average daily net income.
+ * 
+ * @param monthlyNetIncome Average monthly net income from the 3 months before Mutterschutz
+ */
+export function calculateDailyWochengeld(monthlyNetIncome: number): number {
+  if (monthlyNetIncome <= 0) {
+    return 0;
+  }
+  // Wochengeld is roughly the daily net income
+  return monthlyNetIncome / 30;
+}
+
+/**
+ * Calculate total Wochengeld for the Mutterschutz period.
+ */
+export function calculateTotalWochengeld(
+  monthlyNetIncome: number,
+  dueDate: string,
+  birthConditions: BirthCondition[]
+): { dailyWochengeld: number; totalWochengeld: number; durationDays: number } {
+  const dailyWochengeld = calculateDailyWochengeld(monthlyNetIncome);
+  const mutterschutz = calculateMutterschutz(dueDate, birthConditions);
+  
+  if (!mutterschutz.startDate || !mutterschutz.endDate) {
+    return { dailyWochengeld: 0, totalWochengeld: 0, durationDays: 0 };
+  }
+  
+  // Calculate duration in days
+  const startDate = new Date(mutterschutz.startDate);
+  const endDate = new Date(mutterschutz.endDate);
+  const durationDays = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  
+  return {
+    dailyWochengeld,
+    totalWochengeld: dailyWochengeld * durationDays,
+    durationDays,
+  };
+}
+
+/**
  * Calculate total flat-rate amount.
  * The total is constant (~€15,016) regardless of duration chosen.
  */
@@ -272,38 +313,69 @@ const GERMAN_MONTHS = [
 ];
 
 /**
- * Calculate monthly breakdown of KBG payments.
+ * Calculate monthly breakdown of benefits (Wochengeld + KBG).
  */
 export function calculateMonthlyBreakdown(
   distributionPlan: DistributionBlock[],
-  dailyRate: number
+  dailyKbgRate: number,
+  mutterschutzStart: string | null,
+  mutterschutzEnd: string | null,
+  dailyWochengeld: number
 ): MonthlyBreakdownItem[] {
-  if (distributionPlan.length === 0) {
+  const breakdown: MonthlyBreakdownItem[] = [];
+
+  // Determine overall date range (Mutterschutz start to KBG end)
+  let overallStart: Date | null = null;
+  let overallEnd: Date | null = null;
+
+  if (mutterschutzStart) {
+    overallStart = new Date(mutterschutzStart);
+  }
+
+  if (distributionPlan.length > 0) {
+    const sortedBlocks = [...distributionPlan].sort((a, b) =>
+      a.startDate.localeCompare(b.startDate)
+    );
+    const lastBlock = sortedBlocks[sortedBlocks.length - 1]!;
+    overallEnd = new Date(lastBlock.endDate);
+
+    if (!overallStart) {
+      overallStart = new Date(sortedBlocks[0]!.startDate);
+    }
+  }
+
+  if (!overallStart || !overallEnd) {
     return [];
   }
 
-  // Sort blocks by start date
+  const mutterschutzStartDate = mutterschutzStart ? new Date(mutterschutzStart) : null;
+  const mutterschutzEndDate = mutterschutzEnd ? new Date(mutterschutzEnd) : null;
+
+  // Sort KBG blocks by start date
   const sortedBlocks = [...distributionPlan].sort((a, b) =>
     a.startDate.localeCompare(b.startDate)
   );
 
-  const breakdown: MonthlyBreakdownItem[] = [];
-
-  // Get overall date range
-  const startDate = new Date(sortedBlocks[0]!.startDate);
-  const lastBlock = sortedBlocks[sortedBlocks.length - 1]!;
-  const endDate = new Date(lastBlock.endDate);
-
   // Iterate month by month
-  const currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+  const currentDate = new Date(overallStart.getFullYear(), overallStart.getMonth(), 1);
 
-  while (currentDate <= endDate) {
+  while (currentDate <= overallEnd) {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     const monthStart = new Date(year, month, 1);
     const monthEnd = new Date(year, month + 1, 0); // Last day of month
 
-    // Find which blocks overlap with this month
+    // Calculate Wochengeld days in this month
+    let wochengeldDays = 0;
+    if (mutterschutzStartDate && mutterschutzEndDate) {
+      if (mutterschutzEndDate >= monthStart && mutterschutzStartDate <= monthEnd) {
+        const overlapStart = new Date(Math.max(mutterschutzStartDate.getTime(), monthStart.getTime()));
+        const overlapEnd = new Date(Math.min(mutterschutzEndDate.getTime(), monthEnd.getTime()));
+        wochengeldDays = Math.floor((overlapEnd.getTime() - overlapStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      }
+    }
+
+    // Calculate KBG days in this month
     let parent1Days = 0;
     let parent2Days = 0;
 
@@ -311,7 +383,6 @@ export function calculateMonthlyBreakdown(
       const blockStart = new Date(block.startDate);
       const blockEnd = new Date(block.endDate);
 
-      // Check if block overlaps with this month
       if (blockEnd >= monthStart && blockStart <= monthEnd) {
         const overlapStart = new Date(Math.max(blockStart.getTime(), monthStart.getTime()));
         const overlapEnd = new Date(Math.min(blockEnd.getTime(), monthEnd.getTime()));
@@ -326,7 +397,7 @@ export function calculateMonthlyBreakdown(
       }
     }
 
-    const totalDays = parent1Days + parent2Days;
+    const totalKbgDays = parent1Days + parent2Days;
     let parent: 'parent1' | 'parent2' | 'both' | 'none';
 
     if (parent1Days > 0 && parent2Days > 0) {
@@ -335,17 +406,26 @@ export function calculateMonthlyBreakdown(
       parent = 'parent1';
     } else if (parent2Days > 0) {
       parent = 'parent2';
+    } else if (wochengeldDays > 0) {
+      parent = 'parent1'; // Wochengeld is for the mother
     } else {
       parent = 'none';
     }
 
-    if (totalDays > 0) {
+    const kbgAmount = Math.round(totalKbgDays * dailyKbgRate * 100) / 100;
+    const wochengeldAmount = Math.round(wochengeldDays * dailyWochengeld * 100) / 100;
+    const totalAmount = kbgAmount + wochengeldAmount;
+
+    if (totalKbgDays > 0 || wochengeldDays > 0) {
       breakdown.push({
         month: `${year}-${String(month + 1).padStart(2, '0')}`,
         monthLabel: `${GERMAN_MONTHS[month]} ${year}`,
         parent,
-        kbgAmount: Math.round(totalDays * dailyRate * 100) / 100,
-        daysWithKbg: totalDays,
+        kbgAmount,
+        wochengeldAmount,
+        totalAmount,
+        daysWithKbg: totalKbgDays,
+        daysWithWochengeld: wochengeldDays,
       });
     }
 
@@ -360,6 +440,7 @@ export function calculateMonthlyBreakdown(
  * Calculate complete results for the calculator page.
  */
 export function calculateFullResults(
+  dueDate: string,
   parent1: ParentData,
   parent2: ParentData,
   model: ChildcareAllowanceModel,
@@ -367,64 +448,90 @@ export function calculateFullResults(
   birthConditions: BirthCondition[]
 ): CalculatorResults {
   const isBothParents = distributionPlan.some((b) => b.parent === 'parent2');
-  const totalDays = distributionPlan.reduce((sum, b) => sum + b.durationDays, 0);
+  const totalKbgDays = distributionPlan.reduce((sum, b) => sum + b.durationDays, 0);
 
-  // Calculate daily rate based on model
-  let dailyRate: number;
-  let durationDays: number;
+  // Calculate Mutterschutz and Wochengeld (for parent1/mother)
+  const mutterschutz = calculateMutterschutz(dueDate, birthConditions);
+  const dailyWochengeld = calculateDailyWochengeld(parent1.monthlyNetIncome);
+  
+  let mutterschutzDurationDays = 0;
+  if (mutterschutz.startDate && mutterschutz.endDate) {
+    const startDate = new Date(mutterschutz.startDate);
+    const endDate = new Date(mutterschutz.endDate);
+    mutterschutzDurationDays = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  }
+  const totalWochengeld = dailyWochengeld * mutterschutzDurationDays;
+
+  // Calculate daily KBG rate based on model
+  let dailyKbgRate: number;
+  let kbgDurationDays: number;
 
   if (model.type === 'flatRate') {
-    durationDays = model.chosenDurationDays || totalDays;
-    dailyRate = calculateFlatRateDailyRate(durationDays, isBothParents);
+    kbgDurationDays = model.chosenDurationDays || totalKbgDays;
+    dailyKbgRate = calculateFlatRateDailyRate(kbgDurationDays, isBothParents);
   } else {
     // Income-based
     const higherMonthlyNet = Math.max(parent1.monthlyNetIncome, parent2.monthlyNetIncome);
-    dailyRate = calculateIncomeBasedDailyRate(higherMonthlyNet);
-    durationDays = isBothParents
+    dailyKbgRate = calculateIncomeBasedDailyRate(higherMonthlyNet);
+    kbgDurationDays = isBothParents
       ? INCOME_BASED_CONFIG.maxDaysBothParents
       : INCOME_BASED_CONFIG.maxDaysSingleParent;
   }
 
-  const monthlyRate = dailyRate * 30;
-  const totalAmount = dailyRate * totalDays;
+  const monthlyKbgRate = dailyKbgRate * 30;
+  const totalKbgAmount = dailyKbgRate * totalKbgDays;
 
   // Partnership bonus
   const partnershipBonus = calculatePartnershipBonus(distributionPlan);
 
-  // Multiple birth supplement
-  const multipleBirthSupplement = calculateMultipleBirthSupplement(birthConditions, totalDays);
+  // Multiple birth supplement (applies to KBG duration)
+  const multipleBirthSupplement = calculateMultipleBirthSupplement(birthConditions, totalKbgDays);
 
   // Familienbonus (yearly amount for display)
   const familienbonusYearly = FAMILIENBONUS_CONFIG.yearlyAmount;
 
-  // Grand total (KBG only, Familienbonus is separate)
-  const grandTotal = totalAmount + partnershipBonus + multipleBirthSupplement;
+  // Grand total (Wochengeld + KBG + bonuses, Familienbonus is separate)
+  const grandTotal = totalWochengeld + totalKbgAmount + partnershipBonus + multipleBirthSupplement;
 
-  // Monthly breakdown
-  const monthlyBreakdown = calculateMonthlyBreakdown(distributionPlan, dailyRate);
+  // Monthly breakdown (includes both Wochengeld and KBG)
+  const monthlyBreakdown = calculateMonthlyBreakdown(
+    distributionPlan,
+    dailyKbgRate,
+    mutterschutz.startDate,
+    mutterschutz.endDate,
+    dailyWochengeld
+  );
 
   // Income comparison (using net income for comparison)
   const regularMonthlyIncome = Math.max(parent1.monthlyNetIncome, parent2.monthlyNetIncome);
-  const averageKbgMonthly = totalDays > 0 ? totalAmount / (totalDays / 30) : 0;
+  const totalBenefitMonths = monthlyBreakdown.length || 1;
+  const averageMonthlyBenefit = grandTotal / totalBenefitMonths;
   const differencePercent =
     regularMonthlyIncome > 0
-      ? Math.round(((averageKbgMonthly - regularMonthlyIncome) / regularMonthlyIncome) * 100)
+      ? Math.round(((averageMonthlyBenefit - regularMonthlyIncome) / regularMonthlyIncome) * 100)
       : 0;
 
-  // Parent breakdown
-  const parent1Days = distributionPlan
+  // Parent breakdown (KBG only, Wochengeld is always for parent1)
+  const parent1KbgDays = distributionPlan
     .filter((b) => b.parent === 'parent1')
     .reduce((sum, b) => sum + b.durationDays, 0);
-  const parent2Days = distributionPlan
+  const parent2KbgDays = distributionPlan
     .filter((b) => b.parent === 'parent2')
     .reduce((sum, b) => sum + b.durationDays, 0);
 
   return {
+    mutterschutz: {
+      startDate: mutterschutz.startDate || '',
+      endDate: mutterschutz.endDate || '',
+      durationDays: mutterschutzDurationDays,
+      dailyWochengeld,
+      totalWochengeld,
+    },
     selectedModelResults: {
-      dailyRate,
-      monthlyRate,
-      totalAmount,
-      durationDays,
+      dailyRate: dailyKbgRate,
+      monthlyRate: monthlyKbgRate,
+      totalAmount: totalKbgAmount,
+      durationDays: kbgDurationDays,
     },
     partnershipBonus,
     multipleBirthSupplement,
@@ -433,17 +540,17 @@ export function calculateFullResults(
     monthlyBreakdown,
     incomeComparison: {
       regularMonthlyIncome,
-      averageKbgMonthly,
+      averageMonthlyBenefit,
       differencePercent,
     },
     parentBreakdown: {
       parent1: {
-        days: parent1Days,
-        amount: parent1Days * dailyRate,
+        days: parent1KbgDays + mutterschutzDurationDays, // Include Mutterschutz
+        amount: (parent1KbgDays * dailyKbgRate) + totalWochengeld,
       },
       parent2: {
-        days: parent2Days,
-        amount: parent2Days * dailyRate,
+        days: parent2KbgDays,
+        amount: parent2KbgDays * dailyKbgRate,
       },
     },
   };

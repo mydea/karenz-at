@@ -103,14 +103,28 @@ export interface MonthlyBreakdownItem {
   parent: 'parent1' | 'parent2' | 'both' | 'none';
   /** KBG amount for this month */
   kbgAmount: number;
+  /** Wochengeld (maternity allowance) amount for this month */
+  wochengeldAmount: number;
+  /** Total benefit amount (KBG + Wochengeld) */
+  totalAmount: number;
   /** Regular income for comparison (optional) */
   regularIncome?: number;
   /** Days in this month with KBG */
   daysWithKbg: number;
+  /** Days in this month with Wochengeld */
+  daysWithWochengeld: number;
 }
 
 export interface CalculatorResults {
-  /** Results for the selected model */
+  /** Mutterschutz (maternity protection) results */
+  mutterschutz: {
+    startDate: string;
+    endDate: string;
+    durationDays: number;
+    dailyWochengeld: number;
+    totalWochengeld: number;
+  };
+  /** Results for the selected KBG model */
   selectedModelResults: {
     dailyRate: number;
     monthlyRate: number;
@@ -123,14 +137,14 @@ export interface CalculatorResults {
   multipleBirthSupplement: number;
   /** Familienbonus Plus yearly amount */
   familienbonusYearly: number;
-  /** Grand total of all benefits */
+  /** Grand total of all benefits (Wochengeld + KBG + bonuses) */
   grandTotal: number;
   /** Monthly breakdown for chart */
   monthlyBreakdown: MonthlyBreakdownItem[];
   /** Income comparison */
   incomeComparison: {
     regularMonthlyIncome: number;
-    averageKbgMonthly: number;
+    averageMonthlyBenefit: number;
     differencePercent: number;
   };
   /** Per-parent breakdown */

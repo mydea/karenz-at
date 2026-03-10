@@ -38,11 +38,12 @@ export default function CalculatorPage() {
 
   // Calculate full results
   const results = useMemo(() => {
-    if (userData.distributionPlan.length === 0) {
+    if (userData.distributionPlan.length === 0 || !userData.dueDate) {
       return null;
     }
 
     return calculateFullResults(
+      userData.dueDate,
       userData.parent1,
       userData.parent2,
       userData.selectedModel,
@@ -151,6 +152,11 @@ export default function CalculatorPage() {
               Ihre Leistungen
             </h2>
             <SummaryCards
+              mutterschutz={{
+                durationDays: results.mutterschutz.durationDays,
+                dailyWochengeld: results.mutterschutz.dailyWochengeld,
+                totalWochengeld: results.mutterschutz.totalWochengeld,
+              }}
               dailyRate={results.selectedModelResults.dailyRate}
               monthlyRate={results.selectedModelResults.monthlyRate}
               totalAmount={results.selectedModelResults.totalAmount}
@@ -202,7 +208,7 @@ export default function CalculatorPage() {
             <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
               <IncomeComparison
                 regularMonthlyIncome={results.incomeComparison.regularMonthlyIncome}
-                averageKbgMonthly={results.incomeComparison.averageKbgMonthly}
+                averageBenefitMonthly={results.incomeComparison.averageMonthlyBenefit}
                 differencePercent={results.incomeComparison.differencePercent}
               />
             </div>

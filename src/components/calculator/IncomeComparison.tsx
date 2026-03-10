@@ -1,10 +1,10 @@
 /**
- * Component showing comparison between regular income and KBG.
+ * Component showing comparison between regular income and benefits.
  */
 
 interface IncomeComparisonProps {
   regularMonthlyIncome: number;
-  averageKbgMonthly: number;
+  averageBenefitMonthly: number;
   differencePercent: number;
 }
 
@@ -17,7 +17,7 @@ function formatCurrency(amount: number): string {
 
 export function IncomeComparison({
   regularMonthlyIncome,
-  averageKbgMonthly,
+  averageBenefitMonthly,
   differencePercent,
 }: IncomeComparisonProps) {
   if (regularMonthlyIncome <= 0) {
@@ -51,17 +51,17 @@ export function IncomeComparison({
           </div>
         </div>
 
-        {/* KBG */}
+        {/* Average Benefit */}
         <div>
           <div className="mb-1 flex justify-between text-sm">
-            <span className="text-gray-600">Durchschnittliches KBG/Monat</span>
-            <span className="font-semibold">{formatCurrency(averageKbgMonthly)}</span>
+            <span className="text-gray-600">Ø Leistung/Monat (Wochengeld + KBG)</span>
+            <span className="font-semibold">{formatCurrency(averageBenefitMonthly)}</span>
           </div>
           <div className="h-6 w-full rounded-full bg-blue-100">
             <div
               className="h-full rounded-full bg-blue-500 transition-all"
               style={{
-                width: `${Math.min((averageKbgMonthly / regularMonthlyIncome) * 100, 100)}%`,
+                width: `${Math.min((averageBenefitMonthly / regularMonthlyIncome) * 100, 100)}%`,
               }}
             />
           </div>
@@ -78,7 +78,7 @@ export function IncomeComparison({
             <div className={`text-lg font-semibold ${
               isPositive ? 'text-green-700' : 'text-amber-700'
             }`}>
-              {isPositive ? '+' : ''}{formatCurrency(averageKbgMonthly - regularMonthlyIncome)}
+              {isPositive ? '+' : ''}{formatCurrency(averageBenefitMonthly - regularMonthlyIncome)}
             </div>
           </div>
           <div className={`rounded-full px-4 py-2 ${
@@ -95,8 +95,8 @@ export function IncomeComparison({
 
       {/* Info Note */}
       <p className="text-xs text-gray-500">
-        <span className="font-medium">Hinweis:</span> Das KBG ist steuerfrei und wird hier 
-        mit Ihrem Nettoeinkommen verglichen.
+        <span className="font-medium">Hinweis:</span> Wochengeld und KBG sind steuerfrei und werden 
+        hier mit Ihrem Nettoeinkommen verglichen.
       </p>
     </div>
   );
