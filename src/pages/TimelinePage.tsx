@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useUserData } from '@/hooks';
 import type { TimelineEvent, TimelineEventCategory } from '@/types';
 import {
@@ -354,15 +355,15 @@ function TimelineEventCard({
 
         {/* FAQ Link */}
         {event.faqLink && (
-          <a
-            href={`/faq#${event.faqLink}`}
+          <Link
+            to={`/faq#${event.faqLink}`}
             className="mt-2 inline-flex items-center text-sm text-primary-600 hover:text-primary-700"
           >
             Mehr erfahren
             <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
-          </a>
+          </Link>
         )}
       </div>
     </div>

@@ -52,7 +52,7 @@ export function generateTimelineEvents(userData: UserData): TimelineEvent[] {
       category: 'karenz',
       parent: 'parent2',
       isPeriod: true,
-      faqLink: 'papamonat',
+      faqLink: 'vk-papamonat',
       priority: 3,
     });
   }
@@ -70,7 +70,7 @@ export function generateTimelineEvents(userData: UserData): TimelineEvent[] {
       category: 'mutterschutz',
       parent: 'parent1',
       isPeriod: false,
-      faqLink: 'mutterschutz',
+      faqLink: 'ms-wann-beginnt',
       priority: 1,
     });
 
@@ -85,7 +85,7 @@ export function generateTimelineEvents(userData: UserData): TimelineEvent[] {
       category: 'mutterschutz',
       parent: 'parent1',
       isPeriod: true,
-      faqLink: 'mutterschutz',
+      faqLink: 'wg-was-ist',
       priority: 2,
     });
 
@@ -99,6 +99,7 @@ export function generateTimelineEvents(userData: UserData): TimelineEvent[] {
       category: 'mutterschutz',
       parent: 'parent1',
       isPeriod: false,
+      faqLink: 'karenz-wann-beginnt',
       priority: 3,
     });
 
@@ -114,7 +115,7 @@ export function generateTimelineEvents(userData: UserData): TimelineEvent[] {
         date: kbgStartDate,
         category: 'kbg',
         isPeriod: false,
-        faqLink: 'kinderbetreuungsgeld',
+        faqLink: 'kbg-was-ist',
         priority: 4,
       });
     }
@@ -135,7 +136,7 @@ export function generateTimelineEvents(userData: UserData): TimelineEvent[] {
       category: 'employer',
       parent: 'parent1',
       isPeriod: false,
-      faqLink: 'karenz-meldung',
+      faqLink: 'ag-meldung',
       priority: 5,
     });
   }
@@ -154,7 +155,7 @@ export function generateTimelineEvents(userData: UserData): TimelineEvent[] {
       category: 'employer',
       parent: 'parent2',
       isPeriod: false,
-      faqLink: 'papamonat',
+      faqLink: 'vk-papamonat',
       priority: 6,
     });
   }
@@ -174,7 +175,7 @@ export function generateTimelineEvents(userData: UserData): TimelineEvent[] {
       category: 'employer',
       parent: 'parent1',
       isPeriod: true,
-      faqLink: 'kuendigungsschutz',
+      faqLink: 'ks-wann',
       priority: 10,
     });
   }
@@ -207,7 +208,7 @@ export function generateTimelineEvents(userData: UserData): TimelineEvent[] {
     date: dueDate,
     category: 'benefit',
     isPeriod: false,
-    faqLink: 'familienbeihilfe',
+    faqLink: 'fb-was-ist',
     priority: 8,
   });
 
@@ -229,7 +230,7 @@ export function generateTimelineEvents(userData: UserData): TimelineEvent[] {
       date: karenzMaxEnd,
       category: 'karenz',
       isPeriod: false,
-      faqLink: 'karenz-ende',
+      faqLink: 'we-rechte',
       priority: 15,
     });
   }
@@ -270,6 +271,7 @@ function addDistributionPlanEvents(
       category: 'kbg',
       parent: block.parent,
       isPeriod: true,
+      faqLink: 'kbg-was-ist',
       priority: 20 + index,
     });
 
@@ -282,6 +284,7 @@ function addDistributionPlanEvents(
       category: 'kbg',
       parent: block.parent,
       isPeriod: false,
+      faqLink: 'kbg-was-ist',
       priority: 21 + index * 2,
     });
 
@@ -294,6 +297,7 @@ function addDistributionPlanEvents(
       category: 'kbg',
       parent: block.parent,
       isPeriod: false,
+      faqLink: 'kbg-zuverdienst',
       priority: 22 + index * 2,
     });
 
@@ -310,6 +314,7 @@ function addDistributionPlanEvents(
           category: 'employer',
           parent: block.parent,
           isPeriod: false,
+          faqLink: 'ag-meldung',
           priority: 25 + index,
         });
       }
