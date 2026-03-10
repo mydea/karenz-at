@@ -10,7 +10,6 @@ import {
   ModelComparison,
   MonthlyBreakdownChart,
   ParentSplitChart,
-  IncomeComparison,
 } from '@/components/calculator';
 import {
   calculateFullResults,
@@ -196,20 +195,6 @@ export default function CalculatorPage() {
               <MonthlyBreakdownChart
                 data={results.monthlyBreakdown}
                 regularMonthlyIncome={results.incomeComparison.regularMonthlyIncome}
-              />
-            </div>
-          </section>
-
-          {/* Income Comparison */}
-          <section>
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">
-              Einkommensvergleich
-            </h2>
-            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-              <IncomeComparison
-                regularMonthlyIncome={results.incomeComparison.regularMonthlyIncome}
-                averageBenefitMonthly={results.incomeComparison.averageMonthlyBenefit}
-                differencePercent={results.incomeComparison.differencePercent}
               />
             </div>
           </section>
