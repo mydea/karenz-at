@@ -164,29 +164,42 @@ export function hasWochengeldEntitlement(parent: ParentData): boolean {
 
 /**
  * Calculate total Wochengeld for the Mutterschutz period.
+ * 
+ * Important: During post-birth Mutterschutz, if Wochengeld is lower than KBG,
+ * a difference payment (Differenzzahlung) is made to top up to the KBG rate.
+ * This is handled separately in calculateFullResults.
  */
 export function calculateTotalWochengeld(
   parent: ParentData,
   dueDate: string,
   birthConditions: BirthCondition[]
-): { dailyWochengeld: number; totalWochengeld: number; durationDays: number; hasEntitlement: boolean } {
+): {
+  dailyWochengeld: number;
+  totalWochengeld: number;
+  durationDays: number;
+  preBirthDays: number;
+  postBirthDays: number;
+  hasEntitlement: boolean;
+} {
   const hasEntitlement = hasWochengeldEntitlement(parent);
   const dailyWochengeld = calculateDailyWochengeld(parent);
   const mutterschutz = calculateMutterschutz(dueDate, birthConditions);
   
   if (!mutterschutz.startDate || !mutterschutz.endDate) {
-    return { dailyWochengeld: 0, totalWochengeld: 0, durationDays: 0, hasEntitlement };
+    return { dailyWochengeld: 0, totalWochengeld: 0, durationDays: 0, preBirthDays: 0, postBirthDays: 0, hasEntitlement };
   }
   
-  // Calculate duration in days
-  const startDate = new Date(mutterschutz.startDate);
-  const endDate = new Date(mutterschutz.endDate);
-  const durationDays = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  // Calculate pre-birth and post-birth days separately
+  const preBirthDays = MUTTERSCHUTZ_CONFIG.weeksBeforeBirth * 7;
+  const postBirthDays = mutterschutz.weeksAfterBirth * 7;
+  const durationDays = preBirthDays + postBirthDays;
   
   return {
     dailyWochengeld,
     totalWochengeld: dailyWochengeld * durationDays,
     durationDays,
+    preBirthDays,
+    postBirthDays,
     hasEntitlement,
   };
 }
@@ -355,7 +368,9 @@ export function calculateMonthlyBreakdown(
   dailyKbgRate: number,
   mutterschutzStart: string | null,
   mutterschutzEnd: string | null,
-  dailyWochengeld: number
+  dailyWochengeld: number,
+  birthDate?: string,
+  effectivePostBirthDailyRate?: number
 ): MonthlyBreakdownItem[] {
   const breakdown: MonthlyBreakdownItem[] = [];
 
@@ -385,6 +400,7 @@ export function calculateMonthlyBreakdown(
 
   const mutterschutzStartDate = mutterschutzStart ? new Date(mutterschutzStart) : null;
   const mutterschutzEndDate = mutterschutzEnd ? new Date(mutterschutzEnd) : null;
+  const birthDateObj = birthDate ? new Date(birthDate) : null;
 
   // Sort KBG blocks by start date
   const sortedBlocks = [...distributionPlan].sort((a, b) =>
@@ -400,15 +416,35 @@ export function calculateMonthlyBreakdown(
     const monthStart = new Date(year, month, 1);
     const monthEnd = new Date(year, month + 1, 0); // Last day of month
 
-    // Calculate Wochengeld days in this month
-    let wochengeldDays = 0;
+    // Calculate Wochengeld days in this month (split into pre-birth and post-birth)
+    let preBirthWochengeldDays = 0;
+    let postBirthWochengeldDays = 0;
     if (mutterschutzStartDate && mutterschutzEndDate) {
       if (mutterschutzEndDate >= monthStart && mutterschutzStartDate <= monthEnd) {
         const overlapStart = new Date(Math.max(mutterschutzStartDate.getTime(), monthStart.getTime()));
         const overlapEnd = new Date(Math.min(mutterschutzEndDate.getTime(), monthEnd.getTime()));
-        wochengeldDays = Math.floor((overlapEnd.getTime() - overlapStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        
+        // Split into pre-birth and post-birth days
+        if (birthDateObj) {
+          // Pre-birth days (before birth date)
+          if (overlapStart < birthDateObj) {
+            const preBirthEnd = new Date(Math.min(overlapEnd.getTime(), birthDateObj.getTime() - 24 * 60 * 60 * 1000));
+            if (preBirthEnd >= overlapStart) {
+              preBirthWochengeldDays = Math.floor((preBirthEnd.getTime() - overlapStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+            }
+          }
+          // Post-birth days (birth date and after)
+          if (overlapEnd >= birthDateObj) {
+            const postBirthStart = new Date(Math.max(overlapStart.getTime(), birthDateObj.getTime()));
+            postBirthWochengeldDays = Math.floor((overlapEnd.getTime() - postBirthStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+          }
+        } else {
+          // No birth date provided, treat all as pre-birth
+          preBirthWochengeldDays = Math.floor((overlapEnd.getTime() - overlapStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        }
       }
     }
+    const wochengeldDays = preBirthWochengeldDays + postBirthWochengeldDays;
 
     // Calculate KBG days in this month
     let parent1Days = 0;
@@ -448,7 +484,11 @@ export function calculateMonthlyBreakdown(
     }
 
     const kbgAmount = Math.round(totalKbgDays * dailyKbgRate * 100) / 100;
-    const wochengeldAmount = Math.round(wochengeldDays * dailyWochengeld * 100) / 100;
+    // Pre-birth Wochengeld uses the base rate, post-birth uses the effective rate (max of Wochengeld and KBG)
+    const preBirthAmount = Math.round(preBirthWochengeldDays * dailyWochengeld * 100) / 100;
+    const postBirthRate = effectivePostBirthDailyRate ?? dailyWochengeld;
+    const postBirthAmount = Math.round(postBirthWochengeldDays * postBirthRate * 100) / 100;
+    const wochengeldAmount = preBirthAmount + postBirthAmount;
     const totalAmount = kbgAmount + wochengeldAmount;
 
     if (totalKbgDays > 0 || wochengeldDays > 0) {
@@ -490,7 +530,7 @@ export function calculateFullResults(
   const wochengeldResult = calculateTotalWochengeld(parent1, dueDate, birthConditions);
   const dailyWochengeld = wochengeldResult.dailyWochengeld;
   const mutterschutzDurationDays = wochengeldResult.durationDays;
-  const totalWochengeld = wochengeldResult.totalWochengeld;
+  const postBirthMutterschutzDays = wochengeldResult.postBirthDays;
   const hasWochengeld = wochengeldResult.hasEntitlement;
 
   // Calculate daily KBG rate based on model
@@ -509,6 +549,23 @@ export function calculateFullResults(
       : INCOME_BASED_CONFIG.maxDaysSingleParent;
   }
 
+  // Calculate KBG difference payment (Differenzzahlung) for post-birth Mutterschutz
+  // If Wochengeld < KBG rate, the mother receives the difference as a top-up
+  // Source: https://www.oesterreich.gv.at/themen/familie_und_partnerschaft/finanzielle-unterstuetzungen/3/2/Seite.080621.html
+  let kbgDifferencePayment = 0;
+  if (hasWochengeld && dailyWochengeld < dailyKbgRate && postBirthMutterschutzDays > 0) {
+    const dailyDifference = dailyKbgRate - dailyWochengeld;
+    kbgDifferencePayment = dailyDifference * postBirthMutterschutzDays;
+  }
+
+  // Total Wochengeld includes the base Wochengeld plus any KBG difference payment
+  const totalWochengeld = wochengeldResult.totalWochengeld + kbgDifferencePayment;
+
+  // Effective daily rate during post-birth Mutterschutz (for display)
+  const effectivePostBirthDailyRate = hasWochengeld
+    ? Math.max(dailyWochengeld, dailyKbgRate)
+    : 0;
+
   const monthlyKbgRate = dailyKbgRate * 30;
   const totalKbgAmount = dailyKbgRate * totalKbgDays;
 
@@ -524,13 +581,15 @@ export function calculateFullResults(
   // Grand total (Wochengeld + KBG + bonuses, Familienbonus is separate)
   const grandTotal = totalWochengeld + totalKbgAmount + partnershipBonus + multipleBirthSupplement;
 
-  // Monthly breakdown (includes both Wochengeld and KBG)
+  // Monthly breakdown (includes both Wochengeld and KBG, with effective rate for post-birth)
   const monthlyBreakdown = calculateMonthlyBreakdown(
     distributionPlan,
     dailyKbgRate,
     mutterschutz.startDate,
     mutterschutz.endDate,
-    dailyWochengeld
+    dailyWochengeld,
+    dueDate, // Pass birth date to distinguish pre/post-birth Mutterschutz
+    effectivePostBirthDailyRate
   );
 
   // Income comparison (using net income for comparison)
@@ -558,6 +617,8 @@ export function calculateFullResults(
       dailyWochengeld,
       totalWochengeld,
       hasWochengeldEntitlement: hasWochengeld,
+      kbgDifferencePayment,
+      effectivePostBirthDailyRate,
     },
     selectedModelResults: {
       dailyRate: dailyKbgRate,

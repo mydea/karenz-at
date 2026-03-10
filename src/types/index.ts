@@ -143,6 +143,10 @@ export interface CalculatorResults {
     dailyWochengeld: number;
     totalWochengeld: number;
     hasWochengeldEntitlement: boolean;
+    /** KBG difference payment (Differenzzahlung) for post-birth Mutterschutz when Wochengeld < KBG */
+    kbgDifferencePayment: number;
+    /** Effective daily rate during post-birth Mutterschutz (max of Wochengeld and KBG rate) */
+    effectivePostBirthDailyRate: number;
   };
   /** Results for the selected KBG model */
   selectedModelResults: {

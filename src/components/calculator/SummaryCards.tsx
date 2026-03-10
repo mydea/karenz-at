@@ -9,6 +9,8 @@ interface MutterschutzInfo {
   dailyWochengeld: number;
   totalWochengeld: number;
   hasWochengeldEntitlement: boolean;
+  kbgDifferencePayment?: number;
+  effectivePostBirthDailyRate?: number;
 }
 
 interface SummaryCardsProps {
@@ -77,6 +79,16 @@ export function SummaryCards({
               <div className="font-semibold">{formatDays(mutterschutz.durationDays)}</div>
             </div>
           </div>
+          {/* Show KBG difference payment info when Wochengeld < KBG */}
+          {(mutterschutz.kbgDifferencePayment ?? 0) > 0 && (
+            <div className="mt-4 rounded-lg bg-pink-400/30 p-3 text-sm">
+              <div className="font-medium">inkl. KBG-Differenzzahlung: {formatCurrency(mutterschutz.kbgDifferencePayment!)}</div>
+              <div className="mt-1 text-pink-100">
+                Da Ihr Wochengeld niedriger als das KBG ist, erhalten Sie nach der Geburt zusätzlich die Differenz 
+                (effektiv {formatCurrency(mutterschutz.effectivePostBirthDailyRate ?? 0)}/Tag).
+              </div>
+            </div>
+          )}
         </div>
       )}
 
