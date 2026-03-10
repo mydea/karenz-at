@@ -282,7 +282,7 @@ A German-language React web application providing information and utilities for 
 ## Phase 5: FAQ Section
 
 ### 5.1 Content Structure
-- [ ] Research and compile FAQ content:
+- [x] Research and compile FAQ content:
   - Mutterschutz (maternity protection)
   - Karenz (parental leave) basics
   - Kinderbetreuungsgeld (childcare allowance)
@@ -294,11 +294,11 @@ A German-language React web application providing information and utilities for 
   - Returning to work options
 
 ### 5.2 FAQ UI
-- [ ] Searchable FAQ interface
-- [ ] Collapsible accordion sections
-- [ ] Category filtering
-- [ ] Cross-links between related topics
-- [ ] Links to official sources (help.gv.at, etc.)
+- [x] Searchable FAQ interface
+- [x] Collapsible accordion sections
+- [x] Category filtering
+- [x] Cross-links between related topics
+- [x] Links to official sources (help.gv.at, etc.)
 
 ### 5.3 Integration
 - [ ] Link FAQ entries from timeline events
