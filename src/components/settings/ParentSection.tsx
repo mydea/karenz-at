@@ -42,7 +42,7 @@ export function ParentSection({ label, data, onChange, dueDate, errors = {}, isM
     : null;
 
   const employmentStatus = data.employmentStatus || 'employed';
-  const showIncomeField = employmentStatus === 'employed' || employmentStatus === 'unemployed';
+  const showIncomeField = employmentStatus === 'employed';
   const showUnemploymentBenefit = employmentStatus === 'unemployed';
 
   return (
