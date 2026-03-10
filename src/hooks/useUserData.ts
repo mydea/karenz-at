@@ -8,6 +8,7 @@ const STORAGE_KEY = 'karenz-user-data';
 const DEFAULT_PARENT: ParentData = {
   monthlyNetIncome: 0,
   hasWorked182Days: false,
+  employmentStatus: 'employed',
 };
 
 const DEFAULT_USER_DATA: UserData = {
@@ -28,6 +29,8 @@ interface OldParentData {
   monthlySalary?: number;
   monthlyNetIncome?: number;
   hasWorked182Days: boolean;
+  employmentStatus?: ParentData['employmentStatus'];
+  dailyUnemploymentBenefit?: number;
 }
 
 function migrateParentData(parent: OldParentData | ParentData): ParentData {
@@ -37,6 +40,8 @@ function migrateParentData(parent: OldParentData | ParentData): ParentData {
     // Migrate old monthlySalary to monthlyNetIncome (assume ~70% net of gross as approximation)
     monthlyNetIncome: parent.monthlyNetIncome ?? (oldParent.monthlySalary ? oldParent.monthlySalary * 0.7 : 0),
     hasWorked182Days: parent.hasWorked182Days,
+    employmentStatus: parent.employmentStatus ?? 'employed',
+    dailyUnemploymentBenefit: parent.dailyUnemploymentBenefit,
   };
 }
 
@@ -51,8 +56,14 @@ export function useUserData() {
     const oldParent1 = userData.parent1 as OldParentData;
     const oldParent2 = userData.parent2 as OldParentData;
     
-    // Check if migration is needed (old format had monthlySalary)
-    if ('monthlySalary' in oldParent1 || 'monthlySalary' in oldParent2) {
+    // Check if migration is needed (old format had monthlySalary or missing employmentStatus)
+    const needsMigration = 
+      'monthlySalary' in oldParent1 || 
+      'monthlySalary' in oldParent2 ||
+      !oldParent1.employmentStatus ||
+      !oldParent2.employmentStatus;
+      
+    if (needsMigration) {
       setUserData((prev) => ({
         ...prev,
         parent1: migrateParentData(prev.parent1),
@@ -111,9 +122,13 @@ export function useUserData() {
   const isBothParents = userData.distributionPlan.some((b) => b.parent === 'parent2');
 
   // Check if data is complete enough for calculations
+  // Note: For mothers without employment (notEmployed), income can be 0
   const isDataComplete =
     userData.dueDate !== '' &&
-    (userData.parent1.monthlyNetIncome > 0 || userData.parent2.monthlyNetIncome > 0);
+    (userData.parent1.monthlyNetIncome > 0 || 
+     userData.parent2.monthlyNetIncome > 0 ||
+     userData.parent1.employmentStatus === 'notEmployed' ||
+     userData.parent1.employmentStatus === 'marginallyEmployed');
 
   return {
     userData,

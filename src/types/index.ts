@@ -32,6 +32,21 @@ export interface ChildcareAllowanceModel {
   chosenDurationDays?: number;
 }
 
+// === Employment Status (affects Wochengeld eligibility) ===
+
+/**
+ * Employment status for the mother (parent1), determining Wochengeld entitlement.
+ * - employed: Regular employment, Wochengeld = average net income
+ * - unemployed: Receiving Arbeitslosengeld/Notstandshilfe, Wochengeld = 180% of benefit
+ * - marginallyEmployed: Geringfügig with self-insurance, Wochengeld = fixed minimum
+ * - notEmployed: No employment/benefits, NO Wochengeld entitlement
+ */
+export type EmploymentStatus =
+  | 'employed'
+  | 'unemployed'
+  | 'marginallyEmployed'
+  | 'notEmployed';
+
 // === Parent Data ===
 
 export interface ParentData {
@@ -40,6 +55,10 @@ export interface ParentData {
   monthlyNetIncome: number;
   /** Required for einkommensabhängig (182 days continuous employment before birth) */
   hasWorked182Days: boolean;
+  /** Employment status (for parent1/mother, affects Wochengeld) */
+  employmentStatus?: EmploymentStatus;
+  /** Daily unemployment benefit amount (if unemployed) */
+  dailyUnemploymentBenefit?: number;
 }
 
 // === Distribution Plan (Bezugsplan) ===
@@ -123,6 +142,7 @@ export interface CalculatorResults {
     durationDays: number;
     dailyWochengeld: number;
     totalWochengeld: number;
+    hasWochengeldEntitlement: boolean;
   };
   /** Results for the selected KBG model */
   selectedModelResults: {

@@ -115,6 +115,7 @@ export default function SettingsPage() {
           data={userData.parent1}
           onChange={updateParent1}
           dueDate={userData.dueDate}
+          isMother={true}
           errors={Object.fromEntries(
             Object.entries(errorsByField)
               .filter(([key]) => key.startsWith('Elternteil 1'))
@@ -126,6 +127,7 @@ export default function SettingsPage() {
           data={userData.parent2}
           onChange={updateParent2}
           dueDate={userData.dueDate}
+          isMother={false}
           errors={Object.fromEntries(
             Object.entries(errorsByField)
               .filter(([key]) => key.startsWith('Elternteil 2'))

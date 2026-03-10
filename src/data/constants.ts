@@ -102,6 +102,15 @@ export const MUTTERSCHUTZ_CONFIG = {
   extendedWeeksAfterBirth: 12,
 } as const;
 
+// === Wochengeld (Maternity Allowance) ===
+
+export const WOCHENGELD_CONFIG = {
+  /** Fixed daily rate for marginally employed with self-insurance (2026) */
+  minimumDailyRate: 12.19,
+  /** Multiplier for unemployed (Arbeitslosengeld) recipients */
+  unemployedMultiplier: 1.8,
+} as const;
+
 // === Partnership Bonus ===
 
 export const PARTNERSHIP_BONUS_CONFIG = {

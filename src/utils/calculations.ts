@@ -10,6 +10,7 @@ import {
   type ModelComparison,
   type MonthlyBreakdownItem,
   type CalculatorResults,
+  type EmploymentStatus,
 } from '@/types';
 import {
   MUTTERSCHUTZ_CONFIG,
@@ -18,6 +19,7 @@ import {
   PARTNERSHIP_BONUS_CONFIG,
   FAMILIENBONUS_CONFIG,
   MULTIPLE_BIRTH_SUPPLEMENT,
+  WOCHENGELD_CONFIG,
 } from '@/data/constants';
 import { addWeeks, subtractWeeks, addDays } from './dates';
 
@@ -116,32 +118,64 @@ export function calculateIncomeBasedDailyRate(monthlyNetIncome: number): number 
 }
 
 /**
- * Calculate daily Wochengeld (maternity allowance).
- * Wochengeld is approximately equal to the average daily net income.
+ * Calculate daily Wochengeld (maternity allowance) based on employment status.
  * 
- * @param monthlyNetIncome Average monthly net income from the 3 months before Mutterschutz
+ * - employed: Average daily net income (monthlyNetIncome / 30)
+ * - unemployed: 180% of daily unemployment benefit
+ * - marginallyEmployed: Fixed minimum rate (€12.19/day in 2026)
+ * - notEmployed: No Wochengeld entitlement (€0)
+ * 
+ * @param parent Parent data including employment status and income
  */
-export function calculateDailyWochengeld(monthlyNetIncome: number): number {
-  if (monthlyNetIncome <= 0) {
-    return 0;
+export function calculateDailyWochengeld(parent: ParentData): number {
+  const employmentStatus: EmploymentStatus = parent.employmentStatus || 'employed';
+
+  switch (employmentStatus) {
+    case 'employed':
+      if (parent.monthlyNetIncome <= 0) {
+        return 0;
+      }
+      return parent.monthlyNetIncome / 30;
+
+    case 'unemployed':
+      if (!parent.dailyUnemploymentBenefit || parent.dailyUnemploymentBenefit <= 0) {
+        return 0;
+      }
+      return parent.dailyUnemploymentBenefit * WOCHENGELD_CONFIG.unemployedMultiplier;
+
+    case 'marginallyEmployed':
+      return WOCHENGELD_CONFIG.minimumDailyRate;
+
+    case 'notEmployed':
+      return 0;
+
+    default:
+      return 0;
   }
-  // Wochengeld is roughly the daily net income
-  return monthlyNetIncome / 30;
+}
+
+/**
+ * Check if the mother has Wochengeld entitlement based on employment status.
+ */
+export function hasWochengeldEntitlement(parent: ParentData): boolean {
+  const employmentStatus: EmploymentStatus = parent.employmentStatus || 'employed';
+  return employmentStatus !== 'notEmployed';
 }
 
 /**
  * Calculate total Wochengeld for the Mutterschutz period.
  */
 export function calculateTotalWochengeld(
-  monthlyNetIncome: number,
+  parent: ParentData,
   dueDate: string,
   birthConditions: BirthCondition[]
-): { dailyWochengeld: number; totalWochengeld: number; durationDays: number } {
-  const dailyWochengeld = calculateDailyWochengeld(monthlyNetIncome);
+): { dailyWochengeld: number; totalWochengeld: number; durationDays: number; hasEntitlement: boolean } {
+  const hasEntitlement = hasWochengeldEntitlement(parent);
+  const dailyWochengeld = calculateDailyWochengeld(parent);
   const mutterschutz = calculateMutterschutz(dueDate, birthConditions);
   
   if (!mutterschutz.startDate || !mutterschutz.endDate) {
-    return { dailyWochengeld: 0, totalWochengeld: 0, durationDays: 0 };
+    return { dailyWochengeld: 0, totalWochengeld: 0, durationDays: 0, hasEntitlement };
   }
   
   // Calculate duration in days
@@ -153,6 +187,7 @@ export function calculateTotalWochengeld(
     dailyWochengeld,
     totalWochengeld: dailyWochengeld * durationDays,
     durationDays,
+    hasEntitlement,
   };
 }
 
@@ -452,15 +487,11 @@ export function calculateFullResults(
 
   // Calculate Mutterschutz and Wochengeld (for parent1/mother)
   const mutterschutz = calculateMutterschutz(dueDate, birthConditions);
-  const dailyWochengeld = calculateDailyWochengeld(parent1.monthlyNetIncome);
-  
-  let mutterschutzDurationDays = 0;
-  if (mutterschutz.startDate && mutterschutz.endDate) {
-    const startDate = new Date(mutterschutz.startDate);
-    const endDate = new Date(mutterschutz.endDate);
-    mutterschutzDurationDays = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-  }
-  const totalWochengeld = dailyWochengeld * mutterschutzDurationDays;
+  const wochengeldResult = calculateTotalWochengeld(parent1, dueDate, birthConditions);
+  const dailyWochengeld = wochengeldResult.dailyWochengeld;
+  const mutterschutzDurationDays = wochengeldResult.durationDays;
+  const totalWochengeld = wochengeldResult.totalWochengeld;
+  const hasWochengeld = wochengeldResult.hasEntitlement;
 
   // Calculate daily KBG rate based on model
   let dailyKbgRate: number;
@@ -526,6 +557,7 @@ export function calculateFullResults(
       durationDays: mutterschutzDurationDays,
       dailyWochengeld,
       totalWochengeld,
+      hasWochengeldEntitlement: hasWochengeld,
     },
     selectedModelResults: {
       dailyRate: dailyKbgRate,

@@ -163,18 +163,27 @@ Das Wochengeld ist **steuerfrei**, unterliegt aber dem Progressionsvorbehalt (er
   {
     id: 'wg-hoehe',
     question: 'Wie hoch ist das Wochengeld?',
-    answer: `Das Wochengeld entspricht dem **durchschnittlichen Nettoeinkommen** der letzten 3 Kalendermonate vor Beginn des Mutterschutzes.
+    answer: `Die Höhe hängt von Ihrer Beschäftigungssituation ab:
 
-**Berechnung:**
-- Grundlage: Nettobezüge der letzten 13 Wochen (bzw. 3 Monate)
-- Aliquote Sonderzahlungen werden eingerechnet
-- Ergibt einen **Tagessatz**
+**Angestellte:**
+- Durchschnittliches Nettoeinkommen der letzten 3 Monate
+- Beispiel: €2.100 netto/Monat → ca. €70/Tag
 
-**Beispiel:** Bei €2.100 netto monatlich erhalten Sie ca. €70 täglich.
+**Arbeitslose (mit ALG/Notstandshilfe):**
+- **180%** des täglichen Arbeitslosengeldes
+- Beispiel: €35 ALG/Tag → €63 Wochengeld/Tag
 
-**Mindestwochengeld:** €10,90 täglich (Stand 2025) für Personen ohne ausreichende Versicherungszeiten.`,
+**Geringfügig Beschäftigte (mit Selbstversicherung):**
+- Fixbetrag: **€12,19/Tag** (2026)
+- Ca. €366/Monat
+
+**Selbstständige:**
+- Wird aus dem Versicherungswert berechnet
+- Bei GSVG-Versicherung
+
+Das Wochengeld ist **steuerfrei**, unterliegt aber dem Progressionsvorbehalt.`,
     category: 'wochengeld',
-    relatedIds: ['wg-was-ist', 'kbg-einkommensabhaengig'],
+    relatedIds: ['wg-was-ist', 'wg-anspruch', 'wg-arbeitslos', 'wg-geringfuegig'],
   },
   {
     id: 'wg-antrag',
@@ -191,6 +200,98 @@ Das Wochengeld ist **steuerfrei**, unterliegt aber dem Progressionsvorbehalt (er
 Das Wochengeld wird automatisch ausgezahlt, sobald die Meldung bei der ÖGK eingeht. Sie müssen keinen separaten Antrag stellen.`,
     category: 'wochengeld',
     relatedIds: ['wg-was-ist'],
+  },
+  {
+    id: 'wg-anspruch',
+    question: 'Wer hat Anspruch auf Wochengeld?',
+    answer: `**Anspruch auf Wochengeld haben:**
+- Angestellte in Krankenversicherung
+- Freie Dienstnehmerinnen
+- Selbstständige (mit Gewerblicher Sozialversicherung)
+- Arbeitslose (mit Arbeitslosengeld/Notstandshilfe)
+- Geringfügig Beschäftigte (mit Selbstversicherung)
+
+**Keinen Anspruch haben:**
+- Hausfrauen ohne jegliche Erwerbstätigkeit
+- Frauen ohne Krankenversicherung
+- Frauen, die weder arbeiten noch Arbeitslosengeld beziehen
+
+**Wichtig:** Eine vorherige Beschäftigung oder ein laufender Leistungsbezug ist Voraussetzung für das Wochengeld!`,
+    category: 'wochengeld',
+    relatedIds: ['wg-was-ist', 'wg-arbeitslos', 'wg-geringfuegig', 'wg-ohne-einkommen'],
+    officialLinks: [
+      {
+        label: 'Wochengeld Anspruch - AK',
+        url: 'https://www.arbeiterkammer.at/wochengeld',
+      },
+    ],
+  },
+  {
+    id: 'wg-arbeitslos',
+    question: 'Bekomme ich Wochengeld, wenn ich arbeitslos bin?',
+    answer: `**Ja**, wenn Sie bei Beginn des Mutterschutzes Arbeitslosengeld oder Notstandshilfe beziehen, haben Sie Anspruch auf Wochengeld.
+
+**Höhe:** Das Wochengeld beträgt **180% Ihres täglichen Arbeitslosengeldes**.
+
+**Beispiel:** Bei €35 Arbeitslosengeld/Tag erhalten Sie €63 Wochengeld/Tag.
+
+**Wichtig:**
+- Die Schwangerschaft muss während des Leistungsbezugs eingetreten sein ODER
+- Das Arbeitsverhältnis muss während der Schwangerschaft geendet haben
+
+Endet der Arbeitslosengeld-Bezug vor dem Mutterschutz und Sie nehmen keine neue Arbeit auf, besteht **kein** Wochengeld-Anspruch mehr.`,
+    category: 'wochengeld',
+    relatedIds: ['wg-anspruch', 'wg-was-ist', 'kbg-pauschal'],
+    officialLinks: [
+      {
+        label: 'Wochengeld für Arbeitslose - AK',
+        url: 'https://www.arbeiterkammer.at/beratung/arbeitundrecht/Arbeitslosigkeit/Wochengeld_fuer_Arbeitslose.html',
+      },
+    ],
+  },
+  {
+    id: 'wg-geringfuegig',
+    question: 'Bekomme ich Wochengeld bei geringfügiger Beschäftigung?',
+    answer: `**Ja, aber nur mit Selbstversicherung!**
+
+Geringfügig Beschäftigte sind nur unfallversichert. Für Wochengeld müssen Sie sich **freiwillig selbstversichern** (Kranken- und Pensionsversicherung).
+
+**Höhe:** Fixbetrag von **€12,19 pro Tag** (2026), unabhängig vom tatsächlichen Einkommen.
+
+Das sind ca. €366 pro Monat während des Mutterschutzes.
+
+**Selbstversicherung:**
+- Kostet ca. €70/Monat (2026)
+- Bringt auch Pensionszeiten
+- Muss VOR Beginn des Mutterschutzes abgeschlossen sein
+
+**Ohne Selbstversicherung:** Kein Wochengeld-Anspruch!`,
+    category: 'wochengeld',
+    relatedIds: ['wg-anspruch', 'wg-ohne-einkommen'],
+    officialLinks: [
+      {
+        label: 'Geringfügig beschäftigt - AK',
+        url: 'https://www.arbeiterkammer.at/beratung/arbeitundrecht/Arbeitsverhaeltnisse/Geringfuegige_Beschaeftigung.html',
+      },
+    ],
+  },
+  {
+    id: 'wg-ohne-einkommen',
+    question: 'Was ist, wenn ich kein Einkommen habe (Hausfrau)?',
+    answer: `**Ohne Erwerbstätigkeit oder Arbeitslosengeld-Bezug besteht KEIN Anspruch auf Wochengeld.**
+
+Das Wochengeld ist eine Einkommensersatzleistung und setzt vorheriges Einkommen voraus.
+
+**Was Sie trotzdem erhalten:**
+- **Kinderbetreuungsgeld (pauschal):** Ab der Geburt, ohne Beschäftigungsvoraussetzung
+- **Familienbeihilfe:** Ab dem Geburtsmonat
+- **Familienbonus Plus:** Steuerabsetzbetrag (bei eigenem/Partner-Einkommen)
+
+**Tipp:** Das pauschale KBG kann auch ohne vorherige Erwerbstätigkeit bezogen werden – im Gegensatz zum einkommensabhängigen KBG.
+
+**Finanzielle Lücke:** Ohne Wochengeld gibt es in den 8 Wochen vor der Geburt keine Geldleistung. Das KBG beginnt erst nach der Geburt.`,
+    category: 'wochengeld',
+    relatedIds: ['wg-anspruch', 'kbg-pauschal', 'fb-was-ist'],
   },
 
   // === KARENZ ===

@@ -155,6 +155,7 @@ export default function CalculatorPage() {
                 durationDays: results.mutterschutz.durationDays,
                 dailyWochengeld: results.mutterschutz.dailyWochengeld,
                 totalWochengeld: results.mutterschutz.totalWochengeld,
+                hasWochengeldEntitlement: results.mutterschutz.hasWochengeldEntitlement,
               }}
               dailyRate={results.selectedModelResults.dailyRate}
               monthlyRate={results.selectedModelResults.monthlyRate}

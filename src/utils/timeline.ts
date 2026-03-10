@@ -3,7 +3,7 @@
  */
 
 import type { UserData, TimelineEvent, DistributionBlock } from '@/types';
-import { calculateMutterschutz } from './calculations';
+import { calculateMutterschutz, hasWochengeldEntitlement } from './calculations';
 import { addDays, subtractDays, formatDateGerman, daysBetween } from './dates';
 
 /**
@@ -58,34 +58,41 @@ export function generateTimelineEvents(userData: UserData): TimelineEvent[] {
   }
 
   // === Mutterschutz Period ===
+  const hasWochengeld = hasWochengeldEntitlement(parent1);
+  
   if (mutterschutz.startDate && mutterschutz.endDate) {
     // Pre-birth Mutterschutz
     events.push({
       id: 'mutterschutz-start',
       title: 'Beginn Mutterschutz',
-      description:
-        'Absolutes Beschäftigungsverbot beginnt 8 Wochen vor dem errechneten Geburtstermin. ' +
-        'Ab diesem Zeitpunkt erhalten Sie Wochengeld von der Krankenkasse.',
+      description: hasWochengeld
+        ? 'Absolutes Beschäftigungsverbot beginnt 8 Wochen vor dem errechneten Geburtstermin. ' +
+          'Ab diesem Zeitpunkt erhalten Sie Wochengeld von der Krankenkasse.'
+        : 'Die Mutterschutzfrist beginnt 8 Wochen vor dem errechneten Geburtstermin. ' +
+          'Ohne Erwerbstätigkeit besteht kein Anspruch auf Wochengeld.',
       date: mutterschutz.startDate,
       category: 'mutterschutz',
       parent: 'parent1',
       isPeriod: false,
-      faqLink: 'ms-wann-beginnt',
+      faqLink: hasWochengeld ? 'ms-wann-beginnt' : 'wg-ohne-einkommen',
       priority: 1,
     });
 
     // Full Mutterschutz period
     events.push({
       id: 'mutterschutz-period',
-      title: 'Mutterschutz (Wochengeld)',
-      description: `Schutzfrist vor und nach der Geburt. Sie erhalten Wochengeld statt Gehalt. ` +
-        `Nach der Geburt: ${mutterschutz.weeksAfterBirth} Wochen.`,
+      title: hasWochengeld ? 'Mutterschutz (Wochengeld)' : 'Mutterschutzfrist',
+      description: hasWochengeld
+        ? `Schutzfrist vor und nach der Geburt. Sie erhalten Wochengeld statt Gehalt. ` +
+          `Nach der Geburt: ${mutterschutz.weeksAfterBirth} Wochen.`
+        : `Schutzfrist vor und nach der Geburt (${mutterschutz.weeksAfterBirth} Wochen nach Geburt). ` +
+          `Ohne Wochengeld-Anspruch beginnt das Kinderbetreuungsgeld erst nach Ende dieser Frist.`,
       date: mutterschutz.startDate,
       endDate: mutterschutz.endDate,
       category: 'mutterschutz',
       parent: 'parent1',
       isPeriod: true,
-      faqLink: 'wg-was-ist',
+      faqLink: hasWochengeld ? 'wg-was-ist' : 'wg-ohne-einkommen',
       priority: 2,
     });
 
