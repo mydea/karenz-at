@@ -86,7 +86,9 @@ export default function TimelinePage() {
 
   // Format month header
   const formatMonthHeader = (monthKey: string): string => {
-    const [year, month] = monthKey.split('-');
+    const parts = monthKey.split('-');
+    const year = parts[0] ?? '';
+    const month = parts[1] ?? '01';
     const monthNames = [
       'Jänner', 'Februar', 'März', 'April', 'Mai', 'Juni',
       'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember',
@@ -95,7 +97,7 @@ export default function TimelinePage() {
   };
 
   // Get today's date for "today" marker
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split('T')[0] ?? '';
 
   // No data state
   if (!userData.dueDate) {
@@ -253,13 +255,13 @@ export default function TimelinePage() {
 
               {/* Events for this month */}
               <div className="space-y-3">
-                {eventsByMonth[monthKey].map((event) => (
+                {(eventsByMonth[monthKey] ?? []).map((event) => (
                   <TimelineEventCard
                     key={event.id}
                     event={event}
                     today={today}
-                    parent1Name={userData.parent1.name}
-                    parent2Name={userData.parent2.name}
+                    parent1Name={userData.parent1.name ?? ''}
+                    parent2Name={userData.parent2.name ?? ''}
                   />
                 ))}
               </div>

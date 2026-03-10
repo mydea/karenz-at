@@ -19,7 +19,7 @@ export function generateTimelineEvents(userData: UserData): TimelineEvent[] {
   const mutterschutz = calculateMutterschutz(dueDate, birthConditions);
 
   // Check if birth date is today or in the past
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split('T')[0] ?? '';
   const isBirthPastOrToday = dueDate <= today;
 
   // === Birth Date ===
@@ -406,7 +406,7 @@ export function formatDateRange(startDate: string, endDate?: string): string {
  */
 export function getRelativeTime(dateStr: string): string {
   const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = today.toISOString().split('T')[0] ?? '';
   const days = daysBetween(todayStr, dateStr);
 
   if (days === null) return '';
@@ -426,7 +426,7 @@ export function getRelativeTime(dateStr: string): string {
  * Check if an event is in the past.
  */
 export function isEventPast(event: TimelineEvent): boolean {
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split('T')[0] ?? '';
   const endDate = event.endDate || event.date;
   return endDate < today;
 }
@@ -436,7 +436,7 @@ export function isEventPast(event: TimelineEvent): boolean {
  */
 export function isEventActive(event: TimelineEvent): boolean {
   if (!event.isPeriod || !event.endDate) return false;
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split('T')[0] ?? '';
   return event.date <= today && event.endDate >= today;
 }
 

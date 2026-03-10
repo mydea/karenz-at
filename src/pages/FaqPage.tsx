@@ -69,19 +69,6 @@ export default function FaqPage() {
     return items;
   }, [searchQuery, selectedCategory]);
 
-  // Group items by category for display
-  const groupedItems = useMemo(() => {
-    if (searchQuery || selectedCategory) {
-      return null;
-    }
-
-    const groups = new Map<FaqCategory, typeof FAQ_ITEMS>();
-    for (const item of filteredItems) {
-      const existing = groups.get(item.category) || [];
-      groups.set(item.category, [...existing, item]);
-    }
-    return groups;
-  }, [filteredItems, searchQuery, selectedCategory]);
 
   // Handle clicking on a related question
   const handleRelatedClick = (id: string) => {
