@@ -130,10 +130,9 @@ export const FAMILIENBONUS_CONFIG = {
 } as const;
 
 // === Mehrlingszuschlag (Multiple birth supplement) ===
+// Note: Only applies to pauschales KBG (Konto), NOT to income-based KBG
 
 export const MULTIPLE_BIRTH_SUPPLEMENT = {
-  /** Additional daily rate for twins */
-  twinsDaily: 7.27,
-  /** Additional daily rate for each child beyond twins */
-  additionalChildDaily: 10.90,
+  /** Percentage extra per additional child (50% of daily rate) */
+  percentPerAdditionalChild: 50,
 } as const;

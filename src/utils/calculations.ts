@@ -254,22 +254,42 @@ export function calculatePartnershipBonus(distributionPlan: DistributionBlock[])
 }
 
 /**
- * Calculate multiple birth supplement.
+ * Calculate multiple birth supplement for pauschales KBG (Konto).
+ * 
+ * The supplement is 50% of the daily KBG rate per additional child:
+ * - Twins: 1.5x the daily rate (50% extra)
+ * - Triplets: 2x the daily rate (100% extra)
+ * 
+ * Note: This only applies to pauschales KBG, NOT to income-based KBG.
+ * Source: https://www.oesterreich.gv.at/themen/familie_und_partnerschaft/finanzielle-unterstuetzungen/3/2/Seite.080624
+ * 
+ * @param birthConditions Birth conditions (twins, triplets, etc.)
+ * @param durationDays Number of days
+ * @param dailyKbgRate The daily KBG rate (flat-rate)
+ * @param isIncomeBased Whether income-based KBG is selected (no supplement for this model)
  */
 export function calculateMultipleBirthSupplement(
   birthConditions: BirthCondition[],
-  durationDays: number
+  durationDays: number,
+  dailyKbgRate: number,
+  isIncomeBased: boolean = false
 ): number {
+  // No multiple birth supplement for income-based KBG
+  if (isIncomeBased) {
+    return 0;
+  }
+
+  const percentPerChild = MULTIPLE_BIRTH_SUPPLEMENT.percentPerAdditionalChild / 100;
+
   if (birthConditions.includes(BirthCondition.TRIPLETS_OR_MORE)) {
-    // Twins supplement + additional child supplement
-    return (
-      (MULTIPLE_BIRTH_SUPPLEMENT.twinsDaily + MULTIPLE_BIRTH_SUPPLEMENT.additionalChildDaily) *
-      durationDays
-    );
+    // 100% extra (50% for second child + 50% for third child)
+    // For triplets, you get 2x the daily rate (the base + 100% supplement)
+    return dailyKbgRate * percentPerChild * 2 * durationDays;
   }
 
   if (birthConditions.includes(BirthCondition.TWINS)) {
-    return MULTIPLE_BIRTH_SUPPLEMENT.twinsDaily * durationDays;
+    // 50% extra for the second child
+    return dailyKbgRate * percentPerChild * durationDays;
   }
 
   return 0;
@@ -572,8 +592,14 @@ export function calculateFullResults(
   // Partnership bonus
   const partnershipBonus = calculatePartnershipBonus(distributionPlan);
 
-  // Multiple birth supplement (applies to KBG duration)
-  const multipleBirthSupplement = calculateMultipleBirthSupplement(birthConditions, totalKbgDays);
+  // Multiple birth supplement (only for flat-rate KBG, not income-based)
+  const isIncomeBased = model.type === 'incomeBased';
+  const multipleBirthSupplement = calculateMultipleBirthSupplement(
+    birthConditions,
+    totalKbgDays,
+    dailyKbgRate,
+    isIncomeBased
+  );
 
   // Familienbonus (yearly amount for display)
   const familienbonusYearly = FAMILIENBONUS_CONFIG.yearlyAmount;

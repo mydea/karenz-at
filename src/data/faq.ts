@@ -523,10 +523,10 @@ Der Vater kann innerhalb der ersten **3 Monate nach der Geburt** einen "Papamona
   {
     id: 'vk-papamonat',
     question: 'Was ist der Papamonat (Familienzeitbonus)?',
-    answer: `Der "Papamonat" ermöglicht Vätern, **bis zu 31 Tage** nach der Geburt beim Kind zu sein.
+    answer: `Der "Papamonat" ermöglicht Vätern, **28 bis 31 Tage** nach der Geburt beim Kind zu sein.
 
 **Familienzeitbonus:**
-- €25,06 pro Tag (ca. €777 für 31 Tage)
+- **€54,87 pro Tag** (ca. €1.701 für 31 Tage) – Stand 2025/2026
 - Muss innerhalb von **91 Tagen nach der Geburt** bezogen werden
 - Keine Erwerbstätigkeit während dieser Zeit erlaubt
 
@@ -668,15 +668,19 @@ Der Vater kann innerhalb der ersten **3 Monate nach der Geburt** einen "Papamona
     question: 'Was ist die Familienbeihilfe?',
     answer: `Die Familienbeihilfe ist eine **monatliche Geldleistung** für Eltern mit Kindern in Österreich.
 
-**Höhe (ab 2025):**
-- Ab Geburt: €132,80/Monat
-- Ab 3 Jahren: €141,50/Monat
-- Ab 10 Jahren: €164,20/Monat
-- Ab 19 Jahren: €191,60/Monat
+**Höhe (2025/2026):**
+- Ab Geburt: €138,40/Monat
+- Ab 3 Jahren: €148,00/Monat
+- Ab 10 Jahren: €171,80/Monat
+- Ab 19 Jahren: €200,40/Monat
+
+**Zusätzlich ausgezahlt:**
+- Kinderabsetzbetrag: €70,90/Monat pro Kind
+- Schulstartgeld: €121,40 im August (6-15 Jahre)
 
 **Zuschläge:**
 - Geschwisterstaffelung bei mehreren Kindern
-- Erhöhung bei Behinderung
+- Erhöhung bei Behinderung (+€189,20/Monat)
 
 **Anspruch:**
 - Hauptwohnsitz in Österreich
