@@ -1,5 +1,5 @@
 /**
- * FAQ content for the Karenz.at application.
+ * FAQ content for the Karenz.info application.
  * All content in German as per project rules.
  */
 

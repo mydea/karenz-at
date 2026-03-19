@@ -1,5 +1,5 @@
 /**
- * Core data types for the Karenz.at application.
+ * Core data types for the Karenz.info application.
  * Following RULES.md: Internal code in English, user-facing text in German.
  */
 

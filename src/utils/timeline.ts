@@ -449,14 +449,14 @@ export function generateICal(events: TimelineEvent[]): string {
 
   let ical = `BEGIN:VCALENDAR
 VERSION:2.0
-PRODID:-//Karenz.at//Timeline//DE
+PRODID:-//Karenz.info//Timeline//DE
 CALSCALE:GREGORIAN
 METHOD:PUBLISH
 X-WR-CALNAME:Karenz Timeline
 `;
 
   events.forEach((event) => {
-    const uid = `${event.id}@karenz.at`;
+    const uid = `${event.id}@karenz.info`;
     const dtstart = formatICalDate(event.date);
     const dtend = event.endDate
       ? formatICalDate(addDays(event.endDate, 1) || event.endDate)

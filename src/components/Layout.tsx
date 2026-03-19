@@ -18,7 +18,7 @@ export default function Layout() {
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-600">
                 <span className="text-sm font-bold text-white">K</span>
               </div>
-              <span className="text-xl font-semibold text-gray-900">Karenz.at</span>
+              <span className="text-xl font-semibold text-gray-900">Karenz.info</span>
             </NavLink>
 
             <nav className="hidden md:block">
