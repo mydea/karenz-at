@@ -493,10 +493,29 @@ export function DistributionPlanBuilder({
   return (
     <div className="card space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900">Bezugsverteilung</h3>
+        <h3 className="text-lg font-semibold text-gray-900">Kinderbetreuungsgeld Bezugsverteilung</h3>
         <p className="mt-1 text-sm text-gray-500">
-          Planen Sie, wie der Bezug zwischen den Elternteilen aufgeteilt werden soll.
+          Planen Sie, wann und wie lange jeder Elternteil Kinderbetreuungsgeld (KBG) beziehen soll.
+          Sie können bis zu {FLAT_RATE_CONFIG.maxBlocks} Bezugsblöcke anlegen und flexibel zwischen
+          den Elternteilen aufteilen.
         </p>
+        <div className="mt-3 rounded-lg bg-gray-50 p-3">
+          <p className="text-sm font-medium text-gray-700">Wie funktioniert das?</p>
+          <ul className="mt-2 space-y-1 text-sm text-gray-600">
+            <li className="flex items-start gap-2">
+              <span className="mt-1 text-gray-400">•</span>
+              <span>In der Zeitleiste sehen Sie die Bezugsblöcke für Ihre Karenz</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-1 text-gray-400">•</span>
+              <span>Fügen Sie nach Bedarf Blöcke für die Eltern hinzu</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-1 text-gray-400">•</span>
+              <span>Sie können die Blöcke jederzeit bearbeiten oder löschen</span>
+            </li>
+          </ul>
+        </div>
       </div>
 
       {/* Mutterschutz info - only show when mother has Wochengeld */}
@@ -845,7 +864,7 @@ export function DistributionPlanBuilder({
             className="btn-secondary flex-1"
           >
             <span className="mr-2 inline-block h-3 w-3 rounded bg-primary-500" />
-            Block für {parent1Label}
+            Block für {parent1Label} hinzufügen
           </button>
           <button
             type="button"
@@ -853,7 +872,7 @@ export function DistributionPlanBuilder({
             className="btn-secondary flex-1"
           >
             <span className="mr-2 inline-block h-3 w-3 rounded bg-blue-500" />
-            Block für {parent2Label}
+            Block für {parent2Label} hinzufügen
           </button>
         </div>
       )}
