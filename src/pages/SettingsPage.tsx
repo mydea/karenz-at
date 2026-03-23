@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useUserData } from '@/hooks/useUserData';
 import { FormField, DateInput } from '@/components/ui';
 import {
@@ -184,15 +185,65 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Success state */}
+      {/* Success state with next steps */}
       {errors.length === 0 && userData.dueDate && (
-        <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-          <p className="font-medium text-green-900">
-            ✓ Alle erforderlichen Daten eingegeben
+        <div className="rounded-lg border border-green-200 bg-green-50 p-5">
+          <div className="flex items-center gap-2">
+            <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <p className="font-medium text-green-900">Alle erforderlichen Daten eingegeben</p>
+          </div>
+          
+          <p className="mt-3 text-sm text-green-800">
+            Ihre Planung ist fertig! Entdecken Sie jetzt die nächsten Schritte:
           </p>
-          <p className="mt-1 text-sm text-green-700">
-            Sie können jetzt den Zeitplan und Rechner nutzen.
-          </p>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <Link
+              to="/zeitplan"
+              className="flex items-start gap-3 rounded-lg border border-green-300 bg-white p-4 transition-shadow hover:shadow-md"
+            >
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-green-100 text-green-600">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">Zeitplan</p>
+                <p className="mt-1 text-sm text-gray-600">
+                  Alle wichtigen Termine und Fristen auf einen Blick – von Mutterschutz bis Karenzende.
+                </p>
+              </div>
+            </Link>
+
+            <Link
+              to="/rechner"
+              className="flex items-start gap-3 rounded-lg border border-green-300 bg-white p-4 transition-shadow hover:shadow-md"
+            >
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-green-100 text-green-600">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-gray-900">Rechner</p>
+                <p className="mt-1 text-sm text-gray-600">
+                  Berechnen Sie Ihr Wochengeld und Kinderbetreuungsgeld mit detaillierter Monatsübersicht.
+                </p>
+              </div>
+            </Link>
+          </div>
         </div>
       )}
 
