@@ -561,6 +561,46 @@ export function DistributionPlanBuilder({
         </div>
       )}
 
+      {/* Error: Too many days planned */}
+      {remainingDays < 0 && (
+        <div className="rounded-lg border border-red-300 bg-red-50 p-4">
+          <div className="flex gap-3">
+            <div className="flex-shrink-0">
+              <svg
+                className="h-5 w-5 text-red-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+            </div>
+            <div>
+              <h4 className="font-medium text-red-800">Zu viele Tage geplant</h4>
+              <p className="mt-1 text-sm text-red-700">
+                Sie haben {Math.abs(remainingDays)} Tage mehr geplant als für das Kinderbetreuungsgeld
+                verfügbar sind. Bitte reduzieren Sie die Dauer der Bezugsblöcke.
+              </p>
+              <p className="mt-2 text-sm text-red-600">
+                <strong>Hinweis:</strong> Karenz kann länger dauern als der KBG-Bezug – Sie erhalten
+                dann aber kein Kinderbetreuungsgeld mehr.{' '}
+                <a
+                  href="/faq#karenz-dauer"
+                  className="underline hover:text-red-800"
+                >
+                  Mehr erfahren
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Visual timeline */}
       <div className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
@@ -570,8 +610,10 @@ export function DistributionPlanBuilder({
               : `Gesamtanspruch: ${totalAllowanceDays} Tage KBG`}
           </span>
           {motherHasWochengeld && <span className="text-gray-600">KBG: {maxDays} Tage</span>}
-          <span className={remainingDays < 0 ? 'text-red-600' : 'text-gray-600'}>
-            Noch verfügbar: {remainingDays} Tage
+          <span className={remainingDays < 0 ? 'font-medium text-red-600' : 'text-gray-600'}>
+            {remainingDays < 0
+              ? `${Math.abs(remainingDays)} Tage zu viel geplant!`
+              : `Noch verfügbar: ${remainingDays} Tage`}
           </span>
         </div>
 
