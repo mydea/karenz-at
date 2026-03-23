@@ -22,6 +22,36 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Disclaimer Banner */}
+      <section className="rounded-xl border border-amber-200 bg-amber-50 p-4 sm:p-6">
+        <div className="flex gap-3">
+          <div className="flex-shrink-0">
+            <svg
+              className="h-6 w-6 text-amber-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+          </div>
+          <div>
+            <h3 className="font-semibold text-amber-800">Wichtiger Hinweis</h3>
+            <p className="mt-1 text-sm text-amber-700">
+              Diese Website dient ausschließlich zu Informationszwecken und ersetzt keine
+              professionelle Beratung. Alle Angaben sind ohne Gewähr – Daten können fehlerhaft
+              oder nicht mehr aktuell sein. Für verbindliche Auskünfte wenden Sie sich bitte an
+              die zuständigen Behörden (ÖGK, AMS, Finanzamt) oder eine Rechtsberatung.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Features Grid */}
       <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <FeatureCard
@@ -67,21 +97,20 @@ export default function HomePage() {
 
       {/* Info Section */}
       <section className="card">
-        <h2 className="text-xl font-semibold text-gray-900">Wichtige Hinweise</h2>
+        <h2 className="text-xl font-semibold text-gray-900">Für wen ist diese App?</h2>
         <ul className="mt-4 space-y-2 text-gray-600">
           <li className="flex items-start gap-2">
             <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary-500" />
-            <span>Diese App richtet sich an Angestellte in Österreich.</span>
+            <span>Angestellte und freie Dienstnehmer/innen in Österreich</span>
           </li>
           <li className="flex items-start gap-2">
             <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary-500" />
-            <span>Selbstständige haben andere Regelungen und werden nicht unterstützt.</span>
+            <span>Werdende Eltern, die ihre Karenz und das Kinderbetreuungsgeld planen möchten</span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary-500" />
-            <span>
-              Alle Berechnungen sind unverbindlich. Bitte prüfen Sie Ihre Ansprüche bei den
-              zuständigen Stellen.
+            <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-gray-300" />
+            <span className="text-gray-400">
+              Selbstständige haben andere Regelungen und werden derzeit nicht unterstützt
             </span>
           </li>
         </ul>
