@@ -57,12 +57,23 @@ export default function Layout() {
 
       <footer className="border-t border-gray-200 bg-white">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <p className="text-sm text-gray-500">
-              Diese Informationen dienen nur zur Orientierung und stellen keine Rechts- oder
-              Finanzberatung dar.
-            </p>
-            <p className="text-sm text-gray-400">Stand: Februar 2026</p>
+          <div className="flex flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
+            <div className="space-y-1">
+              <p className="text-sm text-gray-500">
+                Diese Informationen dienen nur zur Orientierung und stellen keine Rechts- oder
+                Finanzberatung dar.
+              </p>
+              <p className="text-sm text-gray-500">
+                Für Anregungen und Korrekturen schreiben Sie bitte an{' '}
+                <a
+                  href="mailto:info@karenz.info"
+                  className="text-primary-600 hover:text-primary-700 hover:underline"
+                >
+                  info@karenz.info
+                </a>
+              </p>
+            </div>
+            <p className="text-sm text-gray-400 whitespace-nowrap">Stand: Februar 2026</p>
           </div>
         </div>
       </footer>
