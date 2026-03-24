@@ -5,10 +5,9 @@ import {
   addDays,
   daysBetween,
   formatDateGerman,
-  parseDateGerman,
-  isValidDateString,
 } from '@/utils/dates';
 import { calculateMutterschutz, hasWochengeldEntitlement } from '@/utils/calculations';
+import { DateInput } from '@/components/ui/DateInput';
 
 /**
  * Duration input that allows free typing and only validates on blur.
@@ -67,170 +66,6 @@ function DurationInput({
       min={min}
       max={max}
       className="w-20 rounded border border-gray-300 px-2 py-1 text-sm"
-    />
-  );
-}
-
-/**
- * End date input that allows editing in German format and validates on blur.
- */
-function EndDateInput({
-  value,
-  onChange,
-  minDate,
-}: {
-  value: string; // YYYY-MM-DD
-  onChange: (value: string) => void;
-  minDate: string; // YYYY-MM-DD - minimum valid end date
-}) {
-  const [localValue, setLocalValue] = useState(formatDateGerman(value));
-  const [hasError, setHasError] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Sync local value when external value changes and not focused
-  useEffect(() => {
-    if (document.activeElement !== inputRef.current) {
-      setLocalValue(formatDateGerman(value));
-      setHasError(false);
-    }
-  }, [value]);
-
-  const handleFocus = () => {
-    setLocalValue(formatDateGerman(value));
-    setHasError(false);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalValue(e.target.value);
-    setHasError(false);
-  };
-
-  const handleBlur = () => {
-    const parsed = parseDateGerman(localValue);
-
-    if (parsed && isValidDateString(parsed)) {
-      // Check if date is at least minDate
-      if (parsed >= minDate) {
-        setLocalValue(formatDateGerman(parsed));
-        setHasError(false);
-        onChange(parsed);
-      } else {
-        // Date is before minimum, use minimum
-        setLocalValue(formatDateGerman(minDate));
-        setHasError(false);
-        onChange(minDate);
-      }
-    } else {
-      // Invalid date, revert to original
-      setLocalValue(formatDateGerman(value));
-      setHasError(true);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      inputRef.current?.blur();
-    }
-  };
-
-  return (
-    <input
-      ref={inputRef}
-      type="text"
-      value={localValue}
-      onChange={handleChange}
-      onFocus={handleFocus}
-      onBlur={handleBlur}
-      onKeyDown={handleKeyDown}
-      placeholder="TT.MM.JJJJ"
-      className={`w-28 rounded border px-2 py-1 text-sm ${
-        hasError ? 'border-red-300 bg-red-50' : 'border-gray-300'
-      }`}
-    />
-  );
-}
-
-/**
- * Start date input that allows editing in German format and validates on blur.
- */
-function StartDateInput({
-  value,
-  onChange,
-  minDate,
-  maxDate,
-}: {
-  value: string; // YYYY-MM-DD
-  onChange: (value: string) => void;
-  minDate: string; // YYYY-MM-DD - earliest valid start date
-  maxDate?: string; // YYYY-MM-DD - latest valid start date (for overlap limits)
-}) {
-  const [localValue, setLocalValue] = useState(formatDateGerman(value));
-  const [hasError, setHasError] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Sync local value when external value changes and not focused
-  useEffect(() => {
-    if (document.activeElement !== inputRef.current) {
-      setLocalValue(formatDateGerman(value));
-      setHasError(false);
-    }
-  }, [value]);
-
-  const handleFocus = () => {
-    setLocalValue(formatDateGerman(value));
-    setHasError(false);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalValue(e.target.value);
-    setHasError(false);
-  };
-
-  const handleBlur = () => {
-    const parsed = parseDateGerman(localValue);
-
-    if (parsed && isValidDateString(parsed)) {
-      let finalDate = parsed;
-
-      // Enforce minDate
-      if (finalDate < minDate) {
-        finalDate = minDate;
-      }
-
-      // Enforce maxDate if provided
-      if (maxDate && finalDate > maxDate) {
-        finalDate = maxDate;
-      }
-
-      setLocalValue(formatDateGerman(finalDate));
-      setHasError(false);
-      onChange(finalDate);
-    } else {
-      // Invalid date, revert to original
-      setLocalValue(formatDateGerman(value));
-      setHasError(true);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      inputRef.current?.blur();
-    }
-  };
-
-  return (
-    <input
-      ref={inputRef}
-      type="text"
-      value={localValue}
-      onChange={handleChange}
-      onFocus={handleFocus}
-      onBlur={handleBlur}
-      onKeyDown={handleKeyDown}
-      placeholder="TT.MM.JJJJ"
-      className={`w-28 rounded border px-2 py-1 text-sm ${
-        hasError ? 'border-red-300 bg-red-50' : 'border-gray-300'
-      }`}
     />
   );
 }
@@ -853,23 +688,25 @@ export function DistributionPlanBuilder({
                     {index === 0 ? (
                       <p className="font-medium">{formatDateGerman(block.startDate)}</p>
                     ) : (
-                      <StartDateInput
+                      <DateInput
                         value={block.startDate}
                         onChange={(startDate) => updateBlock(index, { startDate })}
-                        minDate={minStartDate}
-                        maxDate={maxStartDate ?? undefined}
+                        min={minStartDate}
+                        max={maxStartDate ?? undefined}
+                        className="compact-date-picker"
                       />
                     )}
                   </div>
                   <div>
                     <label className="mb-1 block text-xs text-gray-500">Bis</label>
-                    <EndDateInput
+                    <DateInput
                       value={block.endDate}
                       onChange={(endDate) => updateBlock(index, { endDate })}
-                      minDate={
+                      min={
                         addDays(block.startDate, FLAT_RATE_CONFIG.minBlockDays - 1) ??
                         block.startDate
                       }
+                      className="compact-date-picker"
                     />
                   </div>
                   <div>

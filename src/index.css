@@ -37,3 +37,113 @@
     @apply mb-1 block text-sm font-medium text-gray-700;
   }
 }
+
+/* React Date Picker Customization */
+.react-date-picker {
+  @apply w-full;
+}
+
+.react-date-picker__wrapper {
+  @apply rounded-lg border border-gray-300 px-3 py-2 transition-colors;
+}
+
+.react-date-picker__wrapper:hover {
+  @apply border-gray-400;
+}
+
+.react-date-picker--open .react-date-picker__wrapper {
+  @apply border-primary-500 ring-1 ring-primary-500;
+}
+
+.react-date-picker__inputGroup {
+  @apply flex items-center gap-0;
+}
+
+.react-date-picker__inputGroup__input {
+  @apply border-0 bg-transparent p-0 text-gray-900 focus:outline-none focus:ring-0;
+}
+
+.react-date-picker__inputGroup__divider {
+  @apply text-gray-400;
+}
+
+.react-date-picker__button {
+  @apply p-1 hover:bg-gray-100 rounded;
+}
+
+.react-date-picker__button:focus {
+  @apply outline-none;
+}
+
+.react-date-picker__calendar {
+  @apply z-50;
+}
+
+.react-calendar {
+  @apply rounded-lg border border-gray-200 bg-white p-2 shadow-lg;
+  font-family: inherit;
+  width: auto;
+  min-width: 280px;
+}
+
+.react-calendar__navigation {
+  @apply mb-2 flex items-center;
+}
+
+.react-calendar__navigation button {
+  @apply rounded px-2 py-1 text-gray-700 hover:bg-gray-100 disabled:opacity-50;
+}
+
+.react-calendar__navigation__label {
+  @apply font-medium text-gray-900;
+}
+
+.react-calendar__month-view__weekdays {
+  @apply mb-1;
+}
+
+.react-calendar__month-view__weekdays__weekday {
+  @apply text-center text-xs font-medium text-gray-500 py-1;
+}
+
+.react-calendar__month-view__weekdays__weekday abbr {
+  @apply no-underline;
+}
+
+.react-calendar__tile {
+  @apply rounded-full py-1.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors;
+}
+
+.react-calendar__tile--now {
+  @apply bg-primary-100 text-primary-700;
+}
+
+.react-calendar__tile--active {
+  @apply bg-primary-600 text-white hover:bg-primary-700;
+}
+
+.react-calendar__tile--active:enabled:hover {
+  @apply bg-primary-700;
+}
+
+.react-calendar__tile:disabled {
+  @apply text-gray-300 cursor-not-allowed hover:bg-transparent;
+}
+
+/* Compact date picker for distribution blocks */
+.compact-date-picker .react-date-picker__wrapper {
+  @apply rounded border border-gray-300 px-2 py-1 text-sm;
+}
+
+.compact-date-picker .react-date-picker__inputGroup__input {
+  @apply text-sm;
+}
+
+.compact-date-picker .react-calendar {
+  @apply text-sm;
+  min-width: 240px;
+}
+
+.compact-date-picker .react-calendar__tile {
+  @apply py-1 text-xs;
+}
