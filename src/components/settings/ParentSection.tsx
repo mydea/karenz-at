@@ -15,7 +15,7 @@ interface ParentSectionProps {
 const EMPLOYMENT_STATUS_OPTIONS: { value: EmploymentStatus; label: string; description: string }[] = [
   {
     value: 'employed',
-    label: 'Angestellt / Selbstständig',
+    label: 'Angestellt',
     description: 'Wochengeld basiert auf Ihrem Nettoeinkommen',
   },
   {
