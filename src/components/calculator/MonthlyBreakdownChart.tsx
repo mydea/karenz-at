@@ -185,9 +185,9 @@ export function MonthlyBreakdownChart({
             {formatCurrency(totalKbg)}
           </div>
         </div>
-        <div className="rounded-lg bg-emerald-50 p-3">
-          <div className="text-emerald-600">Gesamt</div>
-          <div className="text-lg font-semibold text-emerald-700">
+        <div className="rounded-lg bg-primary-50 p-3">
+          <div className="text-primary-600">Gesamt</div>
+          <div className="text-lg font-semibold text-primary-700">
             {formatCurrency(grandTotal)}
           </div>
         </div>

@@ -187,24 +187,24 @@ export default function SettingsPage() {
 
       {/* Success state with next steps */}
       {errors.length === 0 && userData.dueDate && (
-        <div className="rounded-lg border border-green-200 bg-green-50 p-5">
+        <div className="rounded-lg border border-primary-200 bg-primary-50 p-5">
           <div className="flex items-center gap-2">
-            <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="h-5 w-5 text-primary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
-            <p className="font-medium text-green-900">Alle erforderlichen Daten eingegeben</p>
+            <p className="font-medium text-primary-900">Alle erforderlichen Daten eingegeben</p>
           </div>
           
-          <p className="mt-3 text-sm text-green-800">
+          <p className="mt-3 text-sm text-primary-800">
             Ihre Planung ist fertig! Entdecken Sie jetzt die nächsten Schritte:
           </p>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <Link
               to="/zeitplan"
-              className="flex items-start gap-3 rounded-lg border border-green-300 bg-white p-4 transition-shadow hover:shadow-md"
+              className="flex items-start gap-3 rounded-lg border border-primary-300 bg-white p-4 transition-shadow hover:shadow-md"
             >
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-green-100 text-green-600">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary-100 text-primary-600">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     strokeLinecap="round"
@@ -224,9 +224,9 @@ export default function SettingsPage() {
 
             <Link
               to="/rechner"
-              className="flex items-start gap-3 rounded-lg border border-green-300 bg-white p-4 transition-shadow hover:shadow-md"
+              className="flex items-start gap-3 rounded-lg border border-primary-300 bg-white p-4 transition-shadow hover:shadow-md"
             >
-              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-green-100 text-green-600">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary-100 text-primary-600">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
                     strokeLinecap="round"

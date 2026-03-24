@@ -70,20 +70,20 @@ export function IncomeComparison({
 
       {/* Difference Summary */}
       <div className={`rounded-lg p-4 ${
-        isPositive ? 'bg-green-50' : 'bg-amber-50'
+        isPositive ? 'bg-primary-50' : 'bg-amber-50'
       }`}>
         <div className="flex items-center justify-between">
           <div>
             <div className="text-sm text-gray-600">Monatliche Differenz</div>
             <div className={`text-lg font-semibold ${
-              isPositive ? 'text-green-700' : 'text-amber-700'
+              isPositive ? 'text-primary-700' : 'text-amber-700'
             }`}>
               {isPositive ? '+' : ''}{formatCurrency(averageBenefitMonthly - regularMonthlyIncome)}
             </div>
           </div>
           <div className={`rounded-full px-4 py-2 ${
             isPositive 
-              ? 'bg-green-100 text-green-800' 
+              ? 'bg-primary-100 text-primary-800' 
               : 'bg-amber-100 text-amber-800'
           }`}>
             <span className="text-xl font-bold">

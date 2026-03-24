@@ -380,17 +380,17 @@ export function DistributionPlanBuilder({
 
       {/* Info box when no Wochengeld - KBG starts on birth date */}
       {!motherHasWochengeld && (
-        <div className="rounded-lg border border-green-200 bg-green-50 p-3">
+        <div className="rounded-lg border border-primary-200 bg-primary-50 p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="h-3 w-3 rounded bg-green-500" />
-              <span className="text-sm font-medium text-green-900">KBG ab Geburt</span>
+              <div className="h-3 w-3 rounded bg-primary-500" />
+              <span className="text-sm font-medium text-primary-900">KBG ab Geburt</span>
             </div>
-            <span className="text-sm text-green-700">
+            <span className="text-sm text-primary-700">
               ab {startDate ? formatDateGerman(startDate) : '–'}
             </span>
           </div>
-          <p className="mt-1 text-xs text-green-600">
+          <p className="mt-1 text-xs text-primary-600">
             Ohne Wochengeld-Anspruch beginnt das Kinderbetreuungsgeld direkt mit dem Tag der Geburt.
           </p>
         </div>
@@ -633,7 +633,7 @@ export function DistributionPlanBuilder({
                         ? 'bg-amber-100 text-amber-700'
                         : gap > 0
                           ? 'bg-gray-100 text-gray-600'
-                          : 'bg-green-100 text-green-700'
+                          : 'bg-primary-100 text-primary-700'
                   }`}
                 >
                   {overlap > 0 ? (

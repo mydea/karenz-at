@@ -318,7 +318,7 @@ function TimelineEventCard({
 
       {/* Active period marker */}
       {isActive && (
-        <div className="absolute right-0 top-0 bg-green-500 text-white text-xs px-2 py-0.5 rounded-bl">
+        <div className="absolute right-0 top-0 bg-primary-500 text-white text-xs px-2 py-0.5 rounded-bl">
           Aktuell
         </div>
       )}

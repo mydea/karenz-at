@@ -44,7 +44,7 @@ export function ModelComparison({
         recommendation === 'flatRate' 
           ? 'bg-amber-50 border border-amber-200' 
           : recommendation === 'incomeBased'
-            ? 'bg-emerald-50 border border-emerald-200'
+            ? 'bg-primary-50 border border-primary-200'
             : 'bg-gray-50 border border-gray-200'
       }`}>
         <div className="flex items-start gap-3">
@@ -52,7 +52,7 @@ export function ModelComparison({
             recommendation === 'flatRate' 
               ? 'bg-amber-100 text-amber-600' 
               : recommendation === 'incomeBased'
-                ? 'bg-emerald-100 text-emerald-600'
+                ? 'bg-primary-100 text-primary-600'
                 : 'bg-gray-100 text-gray-600'
           }`}>
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -132,13 +132,13 @@ export function ModelComparison({
             !incomeBased.eligible 
               ? 'border-gray-200 bg-gray-50 opacity-60'
               : selectedModel === 'incomeBased'
-                ? 'border-emerald-400 bg-emerald-50 shadow-md'
-                : 'border-gray-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/50'
+                ? 'border-primary-400 bg-primary-50 shadow-md'
+                : 'border-gray-200 bg-white hover:border-primary-200 hover:bg-primary-50/50'
           }`}
           onClick={() => incomeBased.eligible && onSelectModel?.('incomeBased')}
         >
           {recommendation === 'incomeBased' && incomeBased.eligible && (
-            <div className="absolute -top-3 right-4 rounded-full bg-emerald-500 px-3 py-1 text-xs font-medium text-white">
+            <div className="absolute -top-3 right-4 rounded-full bg-primary-500 px-3 py-1 text-xs font-medium text-white">
               Empfohlen
             </div>
           )}
@@ -146,7 +146,7 @@ export function ModelComparison({
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-semibold text-gray-900">Einkommensabhängiges KBG</h3>
             {selectedModel === 'incomeBased' && (
-              <span className="rounded-full bg-emerald-500 px-2 py-0.5 text-xs text-white">Gewählt</span>
+              <span className="rounded-full bg-primary-500 px-2 py-0.5 text-xs text-white">Gewählt</span>
             )}
             {!incomeBased.eligible && (
               <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-600">
@@ -171,7 +171,7 @@ export function ModelComparison({
             <div className="border-t pt-3">
               <div className="flex justify-between">
                 <span className="font-medium text-gray-700">Gesamtbetrag</span>
-                <span className="text-lg font-bold text-emerald-600">
+                <span className="text-lg font-bold text-primary-600">
                   {formatCurrency(incomeBased.totalAmount)}
                 </span>
               </div>

@@ -356,9 +356,9 @@ export function getCategoryInfo(category: TimelineEvent['category']): {
     case 'kbg':
       return {
         label: 'Kinderbetreuungsgeld',
-        color: 'text-green-700',
-        bgColor: 'bg-green-50',
-        borderColor: 'border-green-300',
+        color: 'text-primary-700',
+        bgColor: 'bg-primary-50',
+        borderColor: 'border-primary-300',
       };
     case 'employer':
       return {

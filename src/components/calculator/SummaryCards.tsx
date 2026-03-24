@@ -147,7 +147,7 @@ export function SummaryCards({
         {/* Partnership Bonus */}
         <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
           <div className="mb-1 text-sm text-gray-500">Partnerschaftsbonus</div>
-          <div className={`text-xl font-semibold ${partnershipBonus > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+          <div className={`text-xl font-semibold ${partnershipBonus > 0 ? 'text-primary-600' : 'text-gray-400'}`}>
             {partnershipBonus > 0 ? formatCurrency(partnershipBonus) : '—'}
           </div>
           <div className="mt-1 text-xs text-gray-400">
@@ -158,7 +158,7 @@ export function SummaryCards({
         {/* Multiple Birth Supplement */}
         <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
           <div className="mb-1 text-sm text-gray-500">Mehrlingszuschlag</div>
-          <div className={`text-xl font-semibold ${multipleBirthSupplement > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+          <div className={`text-xl font-semibold ${multipleBirthSupplement > 0 ? 'text-primary-600' : 'text-gray-400'}`}>
             {multipleBirthSupplement > 0 ? formatCurrency(multipleBirthSupplement) : '—'}
           </div>
           <div className="mt-1 text-xs text-gray-400">
@@ -176,12 +176,12 @@ export function SummaryCards({
         </div>
 
         {/* Grand Total */}
-        <div className="rounded-lg border-2 border-emerald-200 bg-emerald-50 p-4 shadow-sm">
-          <div className="mb-1 text-sm font-medium text-emerald-700">Gesamtleistung</div>
-          <div className="text-xl font-bold text-emerald-800">
+        <div className="rounded-lg border-2 border-primary-200 bg-primary-50 p-4 shadow-sm">
+          <div className="mb-1 text-sm font-medium text-primary-700">Gesamtleistung</div>
+          <div className="text-xl font-bold text-primary-800">
             {formatCurrency(grandTotal)}
           </div>
-          <div className="mt-1 text-xs text-emerald-600">
+          <div className="mt-1 text-xs text-primary-600">
             {mutterschutz?.hasWochengeldEntitlement ? 'Wochengeld + KBG + Boni' : 'KBG + Boni'}
           </div>
         </div>
