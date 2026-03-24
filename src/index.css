@@ -63,6 +63,10 @@
   @apply border-0 bg-transparent p-0 text-gray-900 focus:outline-none focus:ring-0;
 }
 
+.react-date-picker__inputGroup__input--hasLeadingZero {
+  margin-left: 0;
+}
+
 .react-date-picker__inputGroup__divider {
   @apply text-gray-400;
 }
