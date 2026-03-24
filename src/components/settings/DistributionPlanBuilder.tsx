@@ -706,6 +706,25 @@ export function DistributionPlanBuilder({
                         block.startDate
                       }
                     />
+                    {index === blocks.length - 1 && remainingDays !== 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Adjust this block to use exactly all remaining days
+                          const newDuration = block.durationDays + remainingDays;
+                          if (newDuration >= FLAT_RATE_CONFIG.minBlockDays) {
+                            const maxEndDate = addDays(block.startDate, newDuration - 1);
+                            if (maxEndDate) {
+                              updateBlock(index, { endDate: maxEndDate });
+                            }
+                          }
+                        }}
+                        className="mt-1 text-xs text-primary-600 hover:text-primary-700 hover:underline"
+                        title={remainingDays > 0 ? `Noch ${remainingDays} Tage verfügbar` : `${Math.abs(remainingDays)} Tage zu viel geplant`}
+                      >
+                        Bis zum Ende
+                      </button>
+                    )}
                   </div>
                   <div>
                     <label className="mb-1 block text-xs text-gray-500">Dauer</label>
