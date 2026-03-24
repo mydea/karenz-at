@@ -1,6 +1,6 @@
 import type { UserData, DistributionBlock, ParentData, ValidationError } from '@/types';
 import { FLAT_RATE_CONFIG, INCOME_BASED_CONFIG } from '@/data/constants';
-import { isValidDateString } from './dates';
+import { isValidDateString, daysBetween } from './dates';
 
 /**
  * Validate parent data.
@@ -126,12 +126,7 @@ export function validateDistributionPlan(
     const currBlock = sortedBlocks[i]!;
 
     // Allow overlap of up to overlapDaysAllowed
-    const prevEndDate = new Date(prevBlock.endDate);
-    const currStartDate = new Date(currBlock.startDate);
-
-    const gapDays = Math.floor(
-      (currStartDate.getTime() - prevEndDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
+    const gapDays = daysBetween(prevBlock.endDate, currBlock.startDate) ?? 0;
 
     if (gapDays > 1) {
       errors.push({

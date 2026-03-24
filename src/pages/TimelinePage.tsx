@@ -11,7 +11,7 @@ import {
   isEventActive,
   generateICal,
 } from '@/utils/timeline';
-import { formatDateGerman } from '@/utils/dates';
+import { formatDateGerman, getTodayString } from '@/utils/dates';
 
 // All available categories
 const ALL_CATEGORIES: TimelineEventCategory[] = [
@@ -97,7 +97,7 @@ export default function TimelinePage() {
   };
 
   // Get today's date for "today" marker
-  const today = new Date().toISOString().split('T')[0] ?? '';
+  const today = getTodayString();
 
   // No data state
   if (!userData.dueDate) {

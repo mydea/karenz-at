@@ -1,60 +1,25 @@
 /**
- * Date utility functions following RULES.md:
+ * Date utility functions using date-fns.
+ * Following RULES.md:
  * - Storage: YYYY-MM-DD strings (never Date objects or timestamps)
  * - Display: German format DD.MM.YYYY
  * - Parsing: Always explicit, never new Date(string) with ambiguous formats
  */
 
-/**
- * Validate a date string is in YYYY-MM-DD format and is a valid date.
- */
-export function isValidDateString(dateStr: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-    return false;
-  }
+import {
+  parse,
+  format,
+  isValid,
+  addDays as dateFnsAddDays,
+  addWeeks as dateFnsAddWeeks,
+  differenceInDays,
+  startOfDay,
+  isBefore,
+  isAfter,
+} from 'date-fns';
 
-  const [year, month, day] = dateStr.split('-').map(Number);
-  const date = new Date(year!, month! - 1, day);
-
-  return (
-    date.getFullYear() === year && date.getMonth() === month! - 1 && date.getDate() === day
-  );
-}
-
-/**
- * Format a YYYY-MM-DD string to German display format DD.MM.YYYY
- */
-export function formatDateGerman(dateStr: string): string {
-  if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-    return '';
-  }
-
-  const [year, month, day] = dateStr.split('-');
-  return `${day}.${month}.${year}`;
-}
-
-/**
- * Parse a German format date DD.MM.YYYY to YYYY-MM-DD
- */
-export function parseDateGerman(dateStr: string): string | null {
-  const match = dateStr.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
-  if (!match) {
-    return null;
-  }
-
-  const [, day, month, year] = match;
-  const paddedDay = day!.padStart(2, '0');
-  const paddedMonth = month!.padStart(2, '0');
-
-  // Validate the date
-  const result = `${year}-${paddedMonth}-${paddedDay}`;
-  const parsed = parseDate(result);
-  if (!parsed) {
-    return null;
-  }
-
-  return result;
-}
+const ISO_FORMAT = 'yyyy-MM-dd';
+const GERMAN_FORMAT = 'dd.MM.yyyy';
 
 /**
  * Parse a YYYY-MM-DD string to Date object.
@@ -65,29 +30,49 @@ export function parseDate(dateStr: string): Date | null {
     return null;
   }
 
-  const [year, month, day] = dateStr.split('-').map(Number);
-  const date = new Date(year!, month! - 1, day);
+  const date = parse(dateStr, ISO_FORMAT, new Date());
+  return isValid(date) ? date : null;
+}
 
-  // Verify the date is valid
-  if (
-    date.getFullYear() !== year ||
-    date.getMonth() !== month! - 1 ||
-    date.getDate() !== day
-  ) {
-    return null;
-  }
-
-  return date;
+/**
+ * Validate a date string is in YYYY-MM-DD format and is a valid date.
+ */
+export function isValidDateString(dateStr: string): boolean {
+  return parseDate(dateStr) !== null;
 }
 
 /**
  * Format a Date object to YYYY-MM-DD string.
  */
 export function toDateString(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return format(date, ISO_FORMAT);
+}
+
+/**
+ * Format a YYYY-MM-DD string to German display format DD.MM.YYYY
+ */
+export function formatDateGerman(dateStr: string): string {
+  const date = parseDate(dateStr);
+  if (!date) {
+    return '';
+  }
+  return format(date, GERMAN_FORMAT);
+}
+
+/**
+ * Parse a German format date DD.MM.YYYY to YYYY-MM-DD
+ */
+export function parseDateGerman(dateStr: string): string | null {
+  if (!dateStr) {
+    return null;
+  }
+
+  const date = parse(dateStr, GERMAN_FORMAT, new Date());
+  if (!isValid(date)) {
+    return null;
+  }
+
+  return toDateString(date);
 }
 
 /**
@@ -106,15 +91,19 @@ export function addDays(dateStr: string, days: number): string | null {
     return null;
   }
 
-  date.setDate(date.getDate() + days);
-  return toDateString(date);
+  return toDateString(dateFnsAddDays(date, days));
 }
 
 /**
  * Add weeks to a date string.
  */
 export function addWeeks(dateStr: string, weeks: number): string | null {
-  return addDays(dateStr, weeks * 7);
+  const date = parseDate(dateStr);
+  if (!date) {
+    return null;
+  }
+
+  return toDateString(dateFnsAddWeeks(date, weeks));
 }
 
 /**
@@ -128,11 +117,12 @@ export function subtractDays(dateStr: string, days: number): string | null {
  * Subtract weeks from a date string.
  */
 export function subtractWeeks(dateStr: string, weeks: number): string | null {
-  return addDays(dateStr, -weeks * 7);
+  return addWeeks(dateStr, -weeks);
 }
 
 /**
  * Calculate difference in days between two date strings.
+ * Returns positive if endDate is after startDate.
  */
 export function daysBetween(startDateStr: string, endDateStr: string): number | null {
   const startDate = parseDate(startDateStr);
@@ -142,12 +132,11 @@ export function daysBetween(startDateStr: string, endDateStr: string): number | 
     return null;
   }
 
-  const diffTime = endDate.getTime() - startDate.getTime();
-  return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  return differenceInDays(endDate, startDate);
 }
 
 /**
- * Check if a date is in the past.
+ * Check if a date is in the past (before today).
  */
 export function isInPast(dateStr: string): boolean {
   const date = parseDate(dateStr);
@@ -155,14 +144,11 @@ export function isInPast(dateStr: string): boolean {
     return false;
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  return date < today;
+  return isBefore(date, startOfDay(new Date()));
 }
 
 /**
- * Check if a date is in the future.
+ * Check if a date is in the future (after today).
  */
 export function isInFuture(dateStr: string): boolean {
   const date = parseDate(dateStr);
@@ -170,10 +156,7 @@ export function isInFuture(dateStr: string): boolean {
     return false;
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  return date > today;
+  return isAfter(date, startOfDay(new Date()));
 }
 
 /**

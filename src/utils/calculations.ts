@@ -21,7 +21,18 @@ import {
   MULTIPLE_BIRTH_SUPPLEMENT,
   WOCHENGELD_CONFIG,
 } from '@/data/constants';
-import { addWeeks, subtractWeeks, addDays } from './dates';
+import { addWeeks, subtractWeeks, addDays, parseDate } from './dates';
+import {
+  startOfMonth,
+  endOfMonth,
+  addMonths,
+  isBefore,
+  isAfter,
+  max as maxDate,
+  min as minDate,
+  differenceInDays,
+  subDays,
+} from 'date-fns';
 
 /**
  * Calculate Mutterschutz (maternity protection) dates.
@@ -399,7 +410,7 @@ export function calculateMonthlyBreakdown(
   let overallEnd: Date | null = null;
 
   if (mutterschutzStart) {
-    overallStart = new Date(mutterschutzStart);
+    overallStart = parseDate(mutterschutzStart);
   }
 
   if (distributionPlan.length > 0) {
@@ -407,10 +418,10 @@ export function calculateMonthlyBreakdown(
       a.startDate.localeCompare(b.startDate)
     );
     const lastBlock = sortedBlocks[sortedBlocks.length - 1]!;
-    overallEnd = new Date(lastBlock.endDate);
+    overallEnd = parseDate(lastBlock.endDate);
 
     if (!overallStart) {
-      overallStart = new Date(sortedBlocks[0]!.startDate);
+      overallStart = parseDate(sortedBlocks[0]!.startDate);
     }
   }
 
@@ -418,9 +429,9 @@ export function calculateMonthlyBreakdown(
     return [];
   }
 
-  const mutterschutzStartDate = mutterschutzStart ? new Date(mutterschutzStart) : null;
-  const mutterschutzEndDate = mutterschutzEnd ? new Date(mutterschutzEnd) : null;
-  const birthDateObj = birthDate ? new Date(birthDate) : null;
+  const mutterschutzStartDate = mutterschutzStart ? parseDate(mutterschutzStart) : null;
+  const mutterschutzEndDate = mutterschutzEnd ? parseDate(mutterschutzEnd) : null;
+  const birthDateObj = birthDate ? parseDate(birthDate) : null;
 
   // Sort KBG blocks by start date
   const sortedBlocks = [...distributionPlan].sort((a, b) =>
@@ -428,39 +439,37 @@ export function calculateMonthlyBreakdown(
   );
 
   // Iterate month by month
-  const currentDate = new Date(overallStart.getFullYear(), overallStart.getMonth(), 1);
+  let currentDate = startOfMonth(overallStart);
 
-  while (currentDate <= overallEnd) {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const monthStart = new Date(year, month, 1);
-    const monthEnd = new Date(year, month + 1, 0); // Last day of month
+  while (!isAfter(currentDate, overallEnd)) {
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(currentDate);
 
     // Calculate Wochengeld days in this month (split into pre-birth and post-birth)
     let preBirthWochengeldDays = 0;
     let postBirthWochengeldDays = 0;
     if (mutterschutzStartDate && mutterschutzEndDate) {
-      if (mutterschutzEndDate >= monthStart && mutterschutzStartDate <= monthEnd) {
-        const overlapStart = new Date(Math.max(mutterschutzStartDate.getTime(), monthStart.getTime()));
-        const overlapEnd = new Date(Math.min(mutterschutzEndDate.getTime(), monthEnd.getTime()));
+      if (!isAfter(mutterschutzStartDate, monthEnd) && !isBefore(mutterschutzEndDate, monthStart)) {
+        const overlapStart = maxDate([mutterschutzStartDate, monthStart]);
+        const overlapEnd = minDate([mutterschutzEndDate, monthEnd]);
         
         // Split into pre-birth and post-birth days
         if (birthDateObj) {
           // Pre-birth days (before birth date)
-          if (overlapStart < birthDateObj) {
-            const preBirthEnd = new Date(Math.min(overlapEnd.getTime(), birthDateObj.getTime() - 24 * 60 * 60 * 1000));
-            if (preBirthEnd >= overlapStart) {
-              preBirthWochengeldDays = Math.floor((preBirthEnd.getTime() - overlapStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+          if (isBefore(overlapStart, birthDateObj)) {
+            const preBirthEnd = minDate([overlapEnd, subDays(birthDateObj, 1)]);
+            if (!isBefore(preBirthEnd, overlapStart)) {
+              preBirthWochengeldDays = differenceInDays(preBirthEnd, overlapStart) + 1;
             }
           }
           // Post-birth days (birth date and after)
-          if (overlapEnd >= birthDateObj) {
-            const postBirthStart = new Date(Math.max(overlapStart.getTime(), birthDateObj.getTime()));
-            postBirthWochengeldDays = Math.floor((overlapEnd.getTime() - postBirthStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+          if (!isBefore(overlapEnd, birthDateObj)) {
+            const postBirthStart = maxDate([overlapStart, birthDateObj]);
+            postBirthWochengeldDays = differenceInDays(overlapEnd, postBirthStart) + 1;
           }
         } else {
           // No birth date provided, treat all as pre-birth
-          preBirthWochengeldDays = Math.floor((overlapEnd.getTime() - overlapStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+          preBirthWochengeldDays = differenceInDays(overlapEnd, overlapStart) + 1;
         }
       }
     }
@@ -471,14 +480,13 @@ export function calculateMonthlyBreakdown(
     let parent2Days = 0;
 
     for (const block of sortedBlocks) {
-      const blockStart = new Date(block.startDate);
-      const blockEnd = new Date(block.endDate);
+      const blockStart = parseDate(block.startDate);
+      const blockEnd = parseDate(block.endDate);
 
-      if (blockEnd >= monthStart && blockStart <= monthEnd) {
-        const overlapStart = new Date(Math.max(blockStart.getTime(), monthStart.getTime()));
-        const overlapEnd = new Date(Math.min(blockEnd.getTime(), monthEnd.getTime()));
-        const overlapDays =
-          Math.floor((overlapEnd.getTime() - overlapStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      if (blockStart && blockEnd && !isAfter(blockStart, monthEnd) && !isBefore(blockEnd, monthStart)) {
+        const overlapStart = maxDate([blockStart, monthStart]);
+        const overlapEnd = minDate([blockEnd, monthEnd]);
+        const overlapDays = differenceInDays(overlapEnd, overlapStart) + 1;
 
         if (block.parent === 'parent1') {
           parent1Days += overlapDays;
@@ -510,6 +518,8 @@ export function calculateMonthlyBreakdown(
     const postBirthAmount = Math.round(postBirthWochengeldDays * postBirthRate * 100) / 100;
     const wochengeldAmount = preBirthAmount + postBirthAmount;
     const totalAmount = kbgAmount + wochengeldAmount;
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
 
     if (totalKbgDays > 0 || wochengeldDays > 0) {
       breakdown.push({
@@ -525,7 +535,7 @@ export function calculateMonthlyBreakdown(
     }
 
     // Move to next month
-    currentDate.setMonth(currentDate.getMonth() + 1);
+    currentDate = addMonths(currentDate, 1);
   }
 
   return breakdown;

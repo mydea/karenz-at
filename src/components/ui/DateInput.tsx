@@ -1,6 +1,7 @@
 import DatePicker from 'react-date-picker';
 import 'react-date-picker/dist/DatePicker.css';
 import 'react-calendar/dist/Calendar.css';
+import { parseDate, toDateString } from '@/utils/dates';
 
 interface DateInputProps {
   value: string; // YYYY-MM-DD format
@@ -20,18 +21,13 @@ type Value = ValuePiece | [ValuePiece, ValuePiece];
  * Date input with calendar picker that stores/returns YYYY-MM-DD format.
  */
 export function DateInput({ value, onChange, disabled, min, max, className = '' }: DateInputProps) {
-  // Convert YYYY-MM-DD string to Date object
-  const dateValue = value ? new Date(value + 'T00:00:00') : null;
-  const minDate = min ? new Date(min + 'T00:00:00') : undefined;
-  const maxDate = max ? new Date(max + 'T00:00:00') : undefined;
+  const dateValue = parseDate(value);
+  const minDate = parseDate(min ?? '') ?? undefined;
+  const maxDate = parseDate(max ?? '') ?? undefined;
 
   const handleChange = (newValue: Value) => {
     if (newValue instanceof Date) {
-      // Convert Date to YYYY-MM-DD string
-      const year = newValue.getFullYear();
-      const month = String(newValue.getMonth() + 1).padStart(2, '0');
-      const day = String(newValue.getDate()).padStart(2, '0');
-      onChange(`${year}-${month}-${day}`);
+      onChange(toDateString(newValue));
     } else if (newValue === null) {
       onChange('');
     }

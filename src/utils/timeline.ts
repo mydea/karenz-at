@@ -4,7 +4,7 @@
 
 import type { UserData, TimelineEvent, DistributionBlock } from '@/types';
 import { calculateMutterschutz, hasWochengeldEntitlement } from './calculations';
-import { addDays, subtractDays, formatDateGerman, daysBetween } from './dates';
+import { addDays, subtractDays, formatDateGerman, daysBetween, getTodayString } from './dates';
 
 /**
  * Generate all timeline events based on user data.
@@ -19,7 +19,7 @@ export function generateTimelineEvents(userData: UserData): TimelineEvent[] {
   const mutterschutz = calculateMutterschutz(dueDate, birthConditions);
 
   // Check if birth date is today or in the past
-  const today = new Date().toISOString().split('T')[0] ?? '';
+  const today = getTodayString();
   const isBirthPastOrToday = dueDate <= today;
 
   // === Birth Date ===
@@ -405,8 +405,7 @@ export function formatDateRange(startDate: string, endDate?: string): string {
  * Get relative time description (e.g., "in 30 Tagen", "vor 5 Tagen").
  */
 export function getRelativeTime(dateStr: string): string {
-  const today = new Date();
-  const todayStr = today.toISOString().split('T')[0] ?? '';
+  const todayStr = getTodayString();
   const days = daysBetween(todayStr, dateStr);
 
   if (days === null) return '';
@@ -426,7 +425,7 @@ export function getRelativeTime(dateStr: string): string {
  * Check if an event is in the past.
  */
 export function isEventPast(event: TimelineEvent): boolean {
-  const today = new Date().toISOString().split('T')[0] ?? '';
+  const today = getTodayString();
   const endDate = event.endDate || event.date;
   return endDate < today;
 }
@@ -436,7 +435,7 @@ export function isEventPast(event: TimelineEvent): boolean {
  */
 export function isEventActive(event: TimelineEvent): boolean {
   if (!event.isPeriod || !event.endDate) return false;
-  const today = new Date().toISOString().split('T')[0] ?? '';
+  const today = getTodayString();
   return event.date <= today && event.endDate >= today;
 }
 
