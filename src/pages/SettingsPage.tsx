@@ -214,8 +214,13 @@ export default function SettingsPage() {
                   />
                 </svg>
               </div>
-              <div>
-                <p className="font-medium text-gray-900">Zeitplan</p>
+              <div className="flex-1">
+                <p className="flex items-center gap-1 font-medium text-gray-900">
+                  Zum Zeitplan
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </p>
                 <p className="mt-1 text-sm text-gray-600">
                   Alle wichtigen Termine und Fristen auf einen Blick – von Mutterschutz bis Karenzende.
                 </p>
@@ -236,8 +241,13 @@ export default function SettingsPage() {
                   />
                 </svg>
               </div>
-              <div>
-                <p className="font-medium text-gray-900">Rechner</p>
+              <div className="flex-1">
+                <p className="flex items-center gap-1 font-medium text-gray-900">
+                  Zum Rechner
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </p>
                 <p className="mt-1 text-sm text-gray-600">
                   Berechnen Sie Ihr Wochengeld und Kinderbetreuungsgeld mit detaillierter Monatsübersicht.
                 </p>
