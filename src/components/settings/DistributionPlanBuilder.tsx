@@ -719,9 +719,12 @@ export function DistributionPlanBuilder({
                             }
                           }
                         }}
-                        className="mt-1 text-xs text-primary-600 hover:text-primary-700 hover:underline"
+                        className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-primary-300 bg-primary-50 px-3 py-1.5 text-sm text-primary-700 hover:bg-primary-100"
                         title={remainingDays > 0 ? `Noch ${remainingDays} Tage verfügbar` : `${Math.abs(remainingDays)} Tage zu viel geplant`}
                       >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
                         Bis zum Ende
                       </button>
                     )}
