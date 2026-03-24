@@ -5,7 +5,7 @@ const navItems = [
   { to: '/einstellungen', label: 'Einstellungen' },
   { to: '/zeitplan', label: 'Zeitplan' },
   { to: '/rechner', label: 'Rechner' },
-  { to: '/faq', label: 'FAQ' },
+  { to: '/faq', label: 'Information' },
 ];
 
 export default function Layout() {

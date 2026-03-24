@@ -99,7 +99,7 @@ export default function FaqPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Häufige Fragen</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Information</h1>
         <p className="mt-1 text-gray-600">
           Antworten auf die wichtigsten Fragen rund um Karenz, Mutterschutz und
           Kinderbetreuungsgeld.
