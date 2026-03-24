@@ -65,7 +65,7 @@ function DurationInput({
       onKeyDown={handleKeyDown}
       min={min}
       max={max}
-      className="w-20 rounded border border-gray-300 px-2 py-1 text-sm"
+      className="w-24 leading-[1.75em] rounded-lg border border-gray-300 px-3 py-2 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
     />
   );
 }
@@ -693,7 +693,6 @@ export function DistributionPlanBuilder({
                         onChange={(startDate) => updateBlock(index, { startDate })}
                         min={minStartDate}
                         max={maxStartDate ?? undefined}
-                        className="compact-date-picker"
                       />
                     )}
                   </div>
@@ -706,7 +705,6 @@ export function DistributionPlanBuilder({
                         addDays(block.startDate, FLAT_RATE_CONFIG.minBlockDays - 1) ??
                         block.startDate
                       }
-                      className="compact-date-picker"
                     />
                   </div>
                   <div>

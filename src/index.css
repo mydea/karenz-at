@@ -134,20 +134,3 @@
   @apply text-gray-300 cursor-not-allowed hover:bg-transparent;
 }
 
-/* Compact date picker for distribution blocks */
-.compact-date-picker .react-date-picker__wrapper {
-  @apply rounded border border-gray-300 px-2 py-1 text-sm;
-}
-
-.compact-date-picker .react-date-picker__inputGroup__input {
-  @apply text-sm;
-}
-
-.compact-date-picker .react-calendar {
-  @apply text-sm;
-  min-width: 240px;
-}
-
-.compact-date-picker .react-calendar__tile {
-  @apply py-1 text-xs;
-}

@@ -11,7 +11,6 @@ interface DateInputProps {
   disabled?: boolean;
   min?: string;
   max?: string;
-  className?: string;
 }
 
 type ValuePiece = Date | null;
@@ -20,7 +19,7 @@ type Value = ValuePiece | [ValuePiece, ValuePiece];
 /**
  * Date input with calendar picker that stores/returns YYYY-MM-DD format.
  */
-export function DateInput({ value, onChange, disabled, min, max, className = '' }: DateInputProps) {
+export function DateInput({ value, onChange, disabled, min, max }: DateInputProps) {
   const dateValue = parseDate(value);
   const minDate = parseDate(min ?? '') ?? undefined;
   const maxDate = parseDate(max ?? '') ?? undefined;
@@ -34,7 +33,7 @@ export function DateInput({ value, onChange, disabled, min, max, className = '' 
   };
 
   return (
-    <div className={`date-input-wrapper ${className}`}>
+    <div>
       <DatePicker
         value={dateValue}
         onChange={handleChange}
