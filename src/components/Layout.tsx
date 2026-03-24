@@ -1,4 +1,5 @@
-import { Outlet, NavLink } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Outlet, NavLink, useLocation } from 'react-router-dom';
 
 const navItems = [
   { to: '/', label: 'Start' },
@@ -82,25 +83,41 @@ export default function Layout() {
 }
 
 function MobileMenu() {
+  const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on route change
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [isOpen]);
+
   return (
-    <div className="md:hidden">
-      <details className="group relative">
-        <summary className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-lg hover:bg-gray-100">
+    <div ref={menuRef} className="relative md:hidden">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-gray-100"
+        aria-expanded={isOpen}
+        aria-label={isOpen ? 'Menü schließen' : 'Menü öffnen'}
+      >
+        {isOpen ? (
           <svg
-            className="h-6 w-6 text-gray-600 group-open:hidden"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 6h16M4 12h16M4 18h16"
-            />
-          </svg>
-          <svg
-            className="hidden h-6 w-6 text-gray-600 group-open:block"
+            className="h-6 w-6 text-gray-600"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -112,7 +129,24 @@ function MobileMenu() {
               d="M6 18L18 6M6 6l12 12"
             />
           </svg>
-        </summary>
+        ) : (
+          <svg
+            className="h-6 w-6 text-gray-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 6h16M4 12h16M4 18h16"
+            />
+          </svg>
+        )}
+      </button>
+
+      {isOpen && (
         <div className="absolute right-0 top-full mt-2 w-48 rounded-lg border border-gray-200 bg-white py-2 shadow-lg">
           {navItems.map((item) => (
             <NavLink
@@ -131,7 +165,7 @@ function MobileMenu() {
             </NavLink>
           ))}
         </div>
-      </details>
+      )}
     </div>
   );
 }
